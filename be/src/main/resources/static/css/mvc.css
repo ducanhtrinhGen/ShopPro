@@ -1,0 +1,41 @@
+body {
+    background:
+            radial-gradient(circle at 12% -8%, rgba(255, 193, 7, 0.14), transparent 30%),
+            radial-gradient(circle at 88% 0%, rgba(13, 110, 253, 0.14), transparent 34%),
+            linear-gradient(180deg, #0a0f1a 0%, #060a12 100%);
+    color: #e9eef8;
+    min-height: 100vh;
+}
+
+.stat-card {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(19, 28, 45, 0.85);
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+.stat-card span {
+    display: block;
+    color: #a7b5cb;
+    font-size: 0.85rem;
+}
+
+.stat-card strong {
+    font-size: 1.65rem;
+    color: #fff3cd;
+    line-height: 1.1;
+}
+
+.panel-card {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(18, 26, 40, 0.9);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: #e5ecf8;
+    --bs-table-border-color: rgba(255, 255, 255, 0.12);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+}

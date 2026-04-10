@@ -1,0 +1,68 @@
+﻿export class ApiRequestError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
+type RequestOptions = Omit<RequestInit, "body"> & {
+  body?: unknown;
+};
+
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const hasBody = options.body !== undefined;
+  const headers = new Headers(options.headers ?? {});
+
+  if (hasBody && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(path, {
+    method: options.method ?? "GET",
+    credentials: "include",
+    headers,
+    body: hasBody ? JSON.stringify(options.body) : undefined
+  });
+
+  const rawBody = await response.text();
+
+  if (!response.ok) {
+    const jsonBody = parseJsonSafely<{ message?: string }>(rawBody);
+    let message = jsonBody?.message ?? `Yêu cầu thất bại với mã ${response.status}`;
+
+    if (response.status >= 500) {
+      const bodyLower = rawBody.toLowerCase();
+      if (bodyLower.includes("econnrefused") || bodyLower.includes("proxy error")) {
+        message = "Không thể kết nối backend. Hãy bật backend rồi thử lại.";
+      }
+    }
+
+    throw new ApiRequestError(message, response.status);
+  }
+
+  if (response.status === 204 || !rawBody) {
+    return undefined as T;
+  }
+
+  const data = parseJsonSafely<T>(rawBody);
+  if (data === undefined) {
+    throw new ApiRequestError("Định dạng phản hồi từ máy chủ không hợp lệ.", 500);
+  }
+
+  return data;
+}
+
+function parseJsonSafely<T>(rawText: string): T | undefined {
+  if (!rawText) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawText) as T;
+  } catch {
+    return undefined;
+  }
+}

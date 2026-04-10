@@ -1,0 +1,9 @@
+{
+  "name": "shoppro-workspace",
+  "private": true,
+  "scripts": {
+    "start": "node ./scripts/start-all.mjs",
+    "start:be": "powershell -NoProfile -ExecutionPolicy Bypass -File ./run-be.ps1",
+    "start:fe": "powershell -NoProfile -ExecutionPolicy Bypass -File ./run-fe.ps1"
+  }
+}

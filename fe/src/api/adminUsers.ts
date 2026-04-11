@@ -1,7 +1,7 @@
 import { apiRequest } from "./client";
 import type { AdminUser, AdminUserRole } from "../types";
 
-export type ManagementRole = Extract<AdminUserRole, "admin" | "staff">;
+export type ManagementRole = Extract<AdminUserRole, "admin" | "staff" | "user">;
 
 export function getAdminUsers() {
   return apiRequest<AdminUser[]>("/api/admin/users");

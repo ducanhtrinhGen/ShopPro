@@ -153,7 +153,7 @@ public class AccountService implements UserDetailsService {
             throw new IllegalStateException("Ten dang nhap da ton tai.");
         }
 
-        String normalizedRole = normalizeManagementRole(role);
+        String normalizedRole = normalizeOwnerCreatableRole(role);
         Role targetRole = resolveTargetRole(normalizedRole);
 
         Account account = new Account();
@@ -177,8 +177,8 @@ public class AccountService implements UserDetailsService {
         if (isSelfAccount(account, actingUsername)) {
             throw new IllegalStateException("Ban khong the xoa tai khoan dang dang nhap.");
         }
-        if (!isManagementAccount(account)) {
-            throw new IllegalArgumentException("Chi duoc xoa tai khoan admin/staff.");
+        if (hasRole(account, ROLE_OWNER)) {
+            throw new IllegalArgumentException("Khong the xoa tai khoan OWNER.");
         }
 
         accountRepository.delete(account);
@@ -225,12 +225,8 @@ public class AccountService implements UserDetailsService {
         return normalized;
     }
 
-    private String normalizeManagementRole(String role) {
-        String normalized = normalizeRole(role);
-        if (!normalized.equals("admin") && !normalized.equals("staff")) {
-            throw new IllegalArgumentException("Chi duoc tao tai khoan voi role admin hoac staff.");
-        }
-        return normalized;
+    private String normalizeOwnerCreatableRole(String role) {
+        return normalizeRole(role);
     }
 
     private boolean isSelfAccount(Account targetAccount, String actingUsername) {
@@ -271,7 +267,4 @@ public class AccountService implements UserDetailsService {
                 .anyMatch(roleName::equals);
     }
 
-    private boolean isManagementAccount(Account account) {
-        return hasRole(account, ROLE_ADMIN) || hasRole(account, ROLE_STAFF);
-    }
 }

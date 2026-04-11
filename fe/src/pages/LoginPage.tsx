@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { getDefaultRouteForUser } from "../auth/roleUtils";
@@ -32,7 +32,7 @@ export function LoginPage() {
       if (requestError instanceof ApiRequestError) {
         setError(requestError.message);
       } else {
-        setError("Không thể đăng nhập. Vui lòng thử lại.");
+        setError("Khong the dang nhap. Vui long thu lai.");
       }
     } finally {
       setIsSubmitting(false);
@@ -42,13 +42,13 @@ export function LoginPage() {
   return (
     <div className="auth-layout">
       <section className="auth-card">
-        <p className="auth-kicker">Cửa hàng ShopPro</p>
-        <h1>Chào mừng bạn quay lại ShopPro</h1>
-        <p className="auth-description">Đăng nhập để vào đúng khu vực quản trị, vận hành hoặc mua sắm.</p>
+        <p className="auth-kicker">Cua hang ShopPro</p>
+        <h1>Chao mung ban quay lai ShopPro</h1>
+        <p className="auth-description">Dang nhap de vao dung khu vuc quan tri, van hanh hoac mua sam.</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
-            Tên đăng nhập
+            Ten dang nhap
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
@@ -59,7 +59,7 @@ export function LoginPage() {
           </label>
 
           <label>
-            Mật khẩu
+            Mat khau
             <input
               type="password"
               value={password}
@@ -73,17 +73,15 @@ export function LoginPage() {
           {error ? <p className="form-error">{error}</p> : null}
 
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+            {isSubmitting ? "Dang dang nhap..." : "Dang nhap"}
           </button>
         </form>
 
         <div className="demo-credentials">
-          <h2>Tài khoản mẫu</h2>
-          <p>Quản trị: admin / admin123</p>
-          <p>Chủ shop: owner / owner123</p>
-          <p>Nhân viên: staff / staff123</p>
-          <p>Khách hàng: customer / customer123</p>
-        </div>
+          <p>
+            Chua co tai khoan? <Link to="/register">Dang ky ngay</Link>
+          </p>
+        </div>       
       </section>
     </div>
   );

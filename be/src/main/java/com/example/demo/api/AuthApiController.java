@@ -3,12 +3,16 @@ package com.example.demo.api;
 import com.example.demo.api.dto.ApiError;
 import com.example.demo.api.dto.AuthDtos.AuthUserResponse;
 import com.example.demo.api.dto.AuthDtos.LoginRequest;
+import com.example.demo.api.dto.AuthDtos.RegisterRequest;
+import com.example.demo.model.Account;
+import com.example.demo.service.AccountService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,9 +34,11 @@ import java.util.List;
 public class AuthApiController {
 
     private final AuthenticationManager authenticationManager;
+    private final AccountService accountService;
 
-    public AuthApiController(AuthenticationManager authenticationManager) {
+    public AuthApiController(AuthenticationManager authenticationManager, AccountService accountService) {
         this.authenticationManager = authenticationManager;
+        this.accountService = accountService;
     }
 
     @PostMapping("/login")
@@ -42,18 +48,36 @@ public class AuthApiController {
         }
 
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.username().trim(), request.password()));
-
-            SecurityContext context = new SecurityContextImpl(authentication);
-            SecurityContextHolder.setContext(context);
-            httpRequest.getSession(true)
-                    .setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-
+            Authentication authentication = authenticateAndStoreSession(request.username(), request.password(), httpRequest);
             return ResponseEntity.ok(toAuthResponse(authentication));
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiError("Invalid username or password."));
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(
+            @RequestBody(required = false) RegisterRequest request,
+            HttpServletRequest httpRequest) {
+        if (request == null || isBlank(request.username()) || isBlank(request.password())) {
+            return ResponseEntity.badRequest().body(new ApiError("Username and password are required."));
+        }
+
+        try {
+            Account created = accountService.createUserAccount(request.username(), request.password());
+            Authentication authentication = authenticateAndStoreSession(
+                    created.getLogin_name(),
+                    request.password(),
+                    httpRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(toAuthResponse(authentication));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(ex.getMessage()));
+        } catch (BadCredentialsException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiError("Cannot authenticate newly registered account."));
         }
     }
 
@@ -92,6 +116,17 @@ public class AuthApiController {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private Authentication authenticateAndStoreSession(String username, String password, HttpServletRequest httpRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username.trim(), password));
+
+        SecurityContext context = new SecurityContextImpl(authentication);
+        SecurityContextHolder.setContext(context);
+        httpRequest.getSession(true)
+                .setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        return authentication;
     }
 }
 

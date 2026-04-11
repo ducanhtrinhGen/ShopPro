@@ -579,3 +579,4 @@ export function ProductsPage() {
     </section>
   );
 }
+

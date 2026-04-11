@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getCategories } from "../api/catalog";
 import { useAuth } from "../auth/AuthContext";
-import { canAccessAdminArea, getDefaultRouteForUser, isOwnerOrStaffUser } from "../auth/roleUtils";
+import {
+  canAccessAdminArea,
+  getDefaultRouteForUser,
+  isCustomerUser,
+  isOwnerOrStaffUser,
+  isOwnerUser
+} from "../auth/roleUtils";
 import type { Category } from "../types";
 
 export function AppShell() {
@@ -13,11 +19,14 @@ export function AppShell() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isDashboardMenuOpen, setIsDashboardMenuOpen] = useState(false);
 
   const isLoggedIn = Boolean(user);
+  const isOwner = isOwnerUser(user);
   const dashboardPath = getDefaultRouteForUser(user);
   const showAdminLink = canAccessAdminArea(user);
-  const showOpsLink = isOwnerOrStaffUser(user);
+  const showOpsLink = isOwnerOrStaffUser(user) && !isOwner;
+  const showCustomerLinks = isCustomerUser(user);
 
   const navClassName = ({ isActive }: { isActive: boolean }) =>
     isActive ? "corsair-menu-link active" : "corsair-menu-link";
@@ -68,12 +77,14 @@ export function AppShell() {
 
       if (!categoryMenuRef.current.contains(event.target as Node)) {
         setIsCategoryOpen(false);
+        setIsDashboardMenuOpen(false);
       }
     };
 
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsCategoryOpen(false);
+        setIsDashboardMenuOpen(false);
       }
     };
 
@@ -88,6 +99,7 @@ export function AppShell() {
 
   useEffect(() => {
     setIsCategoryOpen(false);
+    setIsDashboardMenuOpen(false);
   }, [location.pathname, location.search]);
 
   return (
@@ -116,22 +128,17 @@ export function AppShell() {
             <NavLink to="/products" className={navClassName}>
               Sản phẩm
             </NavLink>
-            {showAdminLink ? (
-              <NavLink to="/admin" className={navClassName}>
-                Quản trị
-              </NavLink>
-            ) : null}
             {showOpsLink ? (
               <NavLink to="/owner-staff" className={navClassName}>
                 Chủ shop / Nhân viên
               </NavLink>
             ) : null}
-            {isLoggedIn ? (
+            {showCustomerLinks ? (
               <NavLink to="/customer" className={navClassName}>
                 Khách hàng
               </NavLink>
             ) : null}
-            {isLoggedIn ? (
+            {showCustomerLinks ? (
               <NavLink to="/cart" className={navClassName}>
                 Giỏ hàng
               </NavLink>
@@ -142,16 +149,64 @@ export function AppShell() {
             <button
               type="button"
               className={`corsair-action-button${isCategoryOpen ? " open" : ""}`}
-              onClick={() => setIsCategoryOpen((prev) => !prev)}
+              onClick={() => {
+                setIsCategoryOpen((prev) => !prev);
+                setIsDashboardMenuOpen(false);
+              }}
               aria-expanded={isCategoryOpen}
             >
               Danh mục sản phẩm
             </button>
 
-            <Link to={isLoggedIn ? dashboardPath : "/products"} className="corsair-action-link">
-              {isLoggedIn ? "Bảng điều khiển" : "Xem sản phẩm"}
-            </Link>
+            {isLoggedIn ? (
+              <div className={`corsair-dashboard-menu${isDashboardMenuOpen ? " open" : ""}`}>
+                <button
+                  type="button"
+                  className={`corsair-action-link corsair-dashboard-trigger${isDashboardMenuOpen ? " open" : ""}`}
+                  onClick={() => {
+                    setIsDashboardMenuOpen((prev) => !prev);
+                    setIsCategoryOpen(false);
+                  }}
+                  aria-expanded={isDashboardMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  Bảng điều khiển
+                  <span aria-hidden="true">{isDashboardMenuOpen ? "▲" : "▼"}</span>
+                </button>
 
+                {isDashboardMenuOpen ? (
+                  <div className="corsair-dashboard-panel" role="menu" aria-label="Bảng điều khiển">
+                    <Link to={dashboardPath} className="corsair-dashboard-item" role="menuitem">
+                      Trang điều khiển chính
+                    </Link>
+                    {showAdminLink ? (
+                      <Link to="/admin" className="corsair-dashboard-item" role="menuitem">
+                        Quản trị hệ thống
+                      </Link>
+                    ) : null}
+                    {isOwnerOrStaffUser(user) ? (
+                      <Link to="/owner-staff" className="corsair-dashboard-item" role="menuitem">
+                        Chủ shop / Nhân viên
+                      </Link>
+                    ) : null}
+                    {showCustomerLinks ? (
+                      <Link to="/customer" className="corsair-dashboard-item" role="menuitem">
+                        Khách hàng
+                      </Link>
+                    ) : null}
+                    {showCustomerLinks ? (
+                      <Link to="/cart" className="corsair-dashboard-item" role="menuitem">
+                        Giỏ hàng
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <Link to="/products" className="corsair-action-link">
+                Xem sản phẩm
+              </Link>
+            )}
             <button type="button" className="corsair-signout" onClick={handleAuthAction}>
               {isLoggedIn ? "Đăng xuất" : "Đăng nhập"}
             </button>

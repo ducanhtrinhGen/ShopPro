@@ -8,11 +8,13 @@ import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { OrderPage } from "./pages/OrderPage";
 import { OwnerStaffDashboardPage } from "./pages/OwnerStaffDashboardPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import { RegisterPage } from "./pages/RegisterPage";
 
 export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       <Route element={<AppShell />}>
         <Route path="/" element={<ProductsPage />} />

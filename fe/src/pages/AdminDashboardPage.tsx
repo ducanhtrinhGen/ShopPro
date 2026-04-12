@@ -190,6 +190,27 @@ function toErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function toDisplayImageUrl(raw: string | null | undefined) {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+  const normalized = trimmed.replace(/\\/g, "/");
+  if (normalized.startsWith("products/image/") || normalized.startsWith("api/products/image/")) {
+    return `/${normalized}`;
+  }
+  const filename = normalized.includes("/") ? normalized.slice(normalized.lastIndexOf("/") + 1) : normalized;
+  return `/products/image/${encodeURIComponent(filename)}`;
+}
+
 function roleFromSelect(role: string): ManagementRole {
   if (role === "admin" || role === "staff" || role === "user") {
     return role;
@@ -340,7 +361,7 @@ export function AdminDashboardPage() {
           return;
         }
         setOrders([]);
-        setOrderError(toErrorMessage(error, "Khong the tai danh sach don hang."));
+        setOrderError(toErrorMessage(error, "Không thể tải danh sách đơn hàng."));
       } finally {
         if (active) {
           setIsLoadingOrders(false);
@@ -375,7 +396,7 @@ export function AdminDashboardPage() {
         }
         setLowStock([]);
         setDataIssues([]);
-        setOpsError(toErrorMessage(error, "Khong the tai du lieu ton kho va kiem tra du lieu."));
+        setOpsError(toErrorMessage(error, "Không thể tải dữ liệu tồn kho và kiểm tra dữ liệu."));
       } finally {
         if (active) {
           setIsLoadingOps(false);
@@ -415,7 +436,7 @@ export function AdminDashboardPage() {
           return;
         }
         setUsers([]);
-        setUserError(toErrorMessage(error, "Khong the tai danh sach tai khoan."));
+        setUserError(toErrorMessage(error, "Không thể tải danh sách tài khoản."));
       } finally {
         if (active) {
           setIsLoadingUsers(false);
@@ -450,7 +471,7 @@ export function AdminDashboardPage() {
         }
         setProducts([]);
         setBrands([]);
-        setProductError(toErrorMessage(error, "Khong the tai du lieu quan ly san pham."));
+        setProductError(toErrorMessage(error, "Không thể tải dữ liệu quản lý sản phẩm."));
       } finally {
         if (active) {
           setIsLoadingProducts(false);
@@ -580,12 +601,12 @@ export function AdminDashboardPage() {
 
   const sidebarPlaceholder =
     activeView === "categories"
-      ? "Tim theo danh muc / ma danh muc..."
+      ? "Tìm theo danh mục / mã danh mục..."
       : activeView === "products"
-        ? "Tim theo ma san pham / ten san pham..."
+        ? "Tìm theo mã sản phẩm / tên sản phẩm..."
       : activeView === "orders"
-        ? "Tim theo ma don / khach hang..."
-        : "Nhap tu khoa de loc du lieu...";
+        ? "Tìm theo mã đơn / khách hàng..."
+        : "Nhập từ khóa để lọc dữ liệu...";
 
   const handleOrderStatusUpdate = async (orderId: number) => {
     const targetStatus = (orderDraftStatus[orderId] ?? "").trim().toUpperCase();
@@ -811,16 +832,37 @@ export function AdminDashboardPage() {
     setProductMessage(null);
 
     try {
-      await deleteAdminProduct(product.id);
-      setProducts((previous) => previous.filter((item) => item.id !== product.id));
-      setStats((previous) => ({
-        ...previous,
-        productTotal: previous.productTotal > 0 ? previous.productTotal - 1 : 0
-      }));
-      setProductMessage(`Da xoa san pham ${product.name}.`);
-      if (editingProductId === product.id) {
-        resetProductForm();
+      const result = await deleteAdminProduct(product.id);
+
+      if (result?.deleted) {
+        setProducts((previous) => previous.filter((item) => item.id !== product.id));
+        setStats((previous) => ({
+          ...previous,
+          productTotal: previous.productTotal > 0 ? previous.productTotal - 1 : 0
+        }));
+        setProductMessage(result.message || `Da xoa san pham ${product.name}.`);
+        if (editingProductId === product.id) {
+          resetProductForm();
+        }
+        return;
       }
+
+      if (result?.deactivated) {
+        const fallbackProduct: AdminProductOpsItem = {
+          ...product,
+          status: "INACTIVE",
+          quantity: 0
+        };
+        const nextProduct = result.product ?? fallbackProduct;
+        setProducts((previous) => previous.map((item) => (item.id === product.id ? nextProduct : item)));
+        setProductMessage(result.message || `San pham ${product.name} da chuyen sang ngung ban.`);
+        if (editingProductId === product.id) {
+          setProductForm(productToForm(nextProduct));
+        }
+        return;
+      }
+
+      setProductMessage(`Khong the xoa san pham ${product.name}.`);
     } catch (error) {
       setProductMessage(toErrorMessage(error, `Khong the xoa san pham ${product.name}.`));
     } finally {
@@ -899,17 +941,7 @@ export function AdminDashboardPage() {
                 <li>Kiem tra ton kho thap va loi du lieu van hanh.</li>
                 <li>Quan ly noi dung website theo quy trinh.</li>
               </ul>
-            </article>
-
-            <article className="owner-crm-admin-block">
-              <h3>Quyen bo sung cua Owner</h3>
-              <ul>
-                <li>Toan quyen tao, sua, khoa, xoa admin/staff/user.</li>
-                <li>Xem toan bo du lieu he thong va bao cao cao nhat.</li>
-                <li>Duyet thay doi quan trong va cau hinh website.</li>
-                <li>Quyet dinh chien luoc khuyen mai va gia ban.</li>
-              </ul>
-            </article>
+            </article>           
           </div>
         </section>
 
@@ -1063,6 +1095,7 @@ export function AdminDashboardPage() {
 
   const renderProducts = () => {
     const editingProduct = editingProductId !== null ? products.find((item) => item.id === editingProductId) ?? null : null;
+    const productPreviewSrc = toDisplayImageUrl(productForm.thumbnail || productForm.image);
 
     return (
       <>
@@ -1255,8 +1288,8 @@ export function AdminDashboardPage() {
             <div className="owner-crm-product-side">
               <div className="owner-crm-product-preview">
                 <p>Xem truoc anh</p>
-                {productForm.thumbnail || productForm.image ? (
-                  <img src={productForm.thumbnail || productForm.image} alt="preview" />
+                {productPreviewSrc ? (
+                  <img src={productPreviewSrc} alt="preview" />
                 ) : (
                   <div className="owner-crm-product-preview-empty">Chua co anh</div>
                 )}
@@ -1338,63 +1371,62 @@ export function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((product) => (
-                    <tr key={product.id}>
-                      <td className="owner-crm-order-code">SP{String(product.id).padStart(4, "0")}</td>
-                      <td>
-                        {product.thumbnail || product.image ? (
-                          <img
-                            className="owner-crm-product-thumb"
-                            src={product.thumbnail || product.image || ""}
-                            alt={product.name}
-                          />
-                        ) : (
-                          <div className="owner-crm-product-thumb owner-crm-product-thumb-empty">No image</div>
-                        )}
-                      </td>
-                      <td>
-                        <strong>{product.name}</strong>
-                        <p className="owner-crm-product-slug">/{product.slug}</p>
-                      </td>
-                      <td>{product.categoryName || "-"}</td>
-                      <td>{product.brandName || "-"}</td>
-                      <td>
-                        <div className="owner-crm-product-price">
-                          <strong>{moneyFormatter.format(product.price)}</strong>
-                          {product.discountPrice !== null ? (
-                            <span>{moneyFormatter.format(product.discountPrice)}</span>
+                  {filteredProducts.map((product) => {
+                    const productImageSrc = toDisplayImageUrl(product.thumbnail || product.image);
+                    return (
+                      <tr key={product.id}>
+                        <td className="owner-crm-order-code">SP{String(product.id).padStart(4, "0")}</td>
+                        <td>
+                          {productImageSrc ? (
+                            <img className="owner-crm-product-thumb" src={productImageSrc} alt={product.name} />
                           ) : (
-                            <span>Khong giam</span>
+                            <div className="owner-crm-product-thumb owner-crm-product-thumb-empty">No image</div>
                           )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`owner-crm-status ${product.quantity <= 5 ? "is-pending" : "is-done"}`}>
-                          {product.quantity}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`owner-crm-status ${normalizeStatus(product.status) === "ACTIVE" ? "is-done" : "is-default"}`}>
-                          {toProductStatusLabel(product.status)}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="owner-crm-inline-actions">
-                          <button type="button" className="role-admin-button" onClick={() => handleEditProduct(product)}>
-                            Sua
-                          </button>
-                          <button
-                            type="button"
-                            className="role-admin-button role-admin-button-danger"
-                            disabled={deletingProductId === product.id}
-                            onClick={() => void handleDeleteProduct(product)}
-                          >
-                            {deletingProductId === product.id ? "Dang xoa..." : "Xoa"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td>
+                          <strong>{product.name}</strong>
+                          <p className="owner-crm-product-slug">/{product.slug}</p>
+                        </td>
+                        <td>{product.categoryName || "-"}</td>
+                        <td>{product.brandName || "-"}</td>
+                        <td>
+                          <div className="owner-crm-product-price">
+                            <strong>{moneyFormatter.format(product.price)}</strong>
+                            {product.discountPrice !== null ? (
+                              <span>{moneyFormatter.format(product.discountPrice)}</span>
+                            ) : (
+                              <span>Khong giam</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`owner-crm-status ${product.quantity <= 5 ? "is-pending" : "is-done"}`}>
+                            {product.quantity}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`owner-crm-status ${normalizeStatus(product.status) === "ACTIVE" ? "is-done" : "is-default"}`}>
+                            {toProductStatusLabel(product.status)}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="owner-crm-inline-actions">
+                            <button type="button" className="role-admin-button" onClick={() => handleEditProduct(product)}>
+                              Sua
+                            </button>
+                            <button
+                              type="button"
+                              className="role-admin-button role-admin-button-danger"
+                              disabled={deletingProductId === product.id}
+                              onClick={() => void handleDeleteProduct(product)}
+                            >
+                              {deletingProductId === product.id ? "Dang xoa..." : "Xoa"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1719,24 +1751,24 @@ export function AdminDashboardPage() {
               className={activeView === "categories" ? "active" : ""}
               onClick={() => setActiveView("categories")}
             >
-              danh mục
+              Danh mục
             </button>
             <button type="button" className={activeView === "products" ? "active" : ""} onClick={() => setActiveView("products")}>
-              sản phẩm
+              Sản phẩm
             </button>
             <button type="button" className={activeView === "orders" ? "active" : ""} onClick={() => setActiveView("orders")}>
-              Don hang
+              Đơn hàng
             </button>
             {isOwner ? (
               <button type="button" className={activeView === "users" ? "active" : ""} onClick={() => setActiveView("users")}>
-                Nguoi dung
+                Người dùng
               </button>
             ) : null}
           </div>
 
           <div className="owner-crm-sidebar-actions">
-            <Link to="/products">Mo trang san pham</Link>
-            <Link to="/owner-staff">Bang dieu khien Staff</Link>
+            <Link to="/products">Mở trang sản phẩm</Link>
+            <Link to="/owner-staff">Bảng điều khiển Staff</Link>
           </div>
         </aside>
 

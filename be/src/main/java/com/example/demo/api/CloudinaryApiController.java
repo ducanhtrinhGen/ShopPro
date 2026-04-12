@@ -57,6 +57,9 @@ public class CloudinaryApiController {
             return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ApiError(ex.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(new ApiError("Upload anh len Cloudinary that bai."));
         }
     }
 }

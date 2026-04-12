@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
     boolean existsByUserAndProduct(Account user, Product product);
+
+    long deleteByProduct(Product product);
 }

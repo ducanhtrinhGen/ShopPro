@@ -3227,9 +3227,13 @@ select {
 }
 
 .role-admin-button-danger {
-  color: #ffe1df;
-  border: 1px solid rgba(255, 120, 120, 0.5);
-  background: rgba(255, 91, 91, 0.18);
+  color: #6a1010;
+  border: 1px solid rgba(193, 45, 45, 0.55);
+  background: rgba(255, 107, 107, 0.32);
+}
+
+.role-admin-button-danger:hover {
+  background: rgba(255, 107, 107, 0.42);
 }
 
 @media (max-width: 900px) {
@@ -3496,6 +3500,11 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.owner-crm-inline-actions .role-admin-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .owner-crm-inline-select {

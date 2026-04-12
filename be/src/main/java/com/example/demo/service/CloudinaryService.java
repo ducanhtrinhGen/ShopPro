@@ -55,6 +55,8 @@ public class CloudinaryService {
             return new CloudinaryUploadResult(secureUrl, publicId, format, bytes);
         } catch (IOException ex) {
             throw new IllegalStateException("Upload anh len Cloudinary that bai.", ex);
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException(buildUploadFailureMessage(ex), ex);
         }
     }
 
@@ -95,6 +97,18 @@ public class CloudinaryService {
             }
         }
         return 0L;
+    }
+
+    private String buildUploadFailureMessage(RuntimeException ex) {
+        String detail = ex.getMessage();
+        if (detail == null || detail.isBlank()) {
+            return "Upload anh len Cloudinary that bai.";
+        }
+        String compact = detail.replace('\n', ' ').replace('\r', ' ').trim();
+        if (compact.length() > 220) {
+            compact = compact.substring(0, 220) + "...";
+        }
+        return "Upload anh len Cloudinary that bai: " + compact;
     }
 
     public record CloudinaryUploadResult(String secureUrl, String publicId, String format, long bytes) {

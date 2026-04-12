@@ -12,6 +12,7 @@ import com.example.demo.api.dto.AdminOpsDtos.BrandUpsertRequest;
 import com.example.demo.api.dto.AdminOpsDtos.CategoryUpsertRequest;
 import com.example.demo.api.dto.AdminOpsDtos.DataIssueItem;
 import com.example.demo.api.dto.AdminOpsDtos.OrderStatusUpdateRequest;
+import com.example.demo.api.dto.AdminOpsDtos.ProductDeleteResult;
 import com.example.demo.api.dto.AdminOpsDtos.ProductUpsertRequest;
 import com.example.demo.api.dto.AdminOpsDtos.PromotionUpdateRequest;
 import com.example.demo.api.dto.ApiError;
@@ -23,9 +24,14 @@ import com.example.demo.model.OrderDetail;
 import com.example.demo.model.Product;
 import com.example.demo.repository.BlogPostRepository;
 import com.example.demo.repository.BrandRepository;
+import com.example.demo.repository.CartLineItemRepository;
 import com.example.demo.repository.CategoryRepository;
+import com.example.demo.repository.OrderDetailRepository;
 import com.example.demo.repository.OrderRepository;
+import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.repository.ProductRepository;
+import com.example.demo.repository.ReviewRepository;
+import com.example.demo.repository.WishlistRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -70,6 +76,11 @@ public class AdminOperationsApiController {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final BlogPostRepository blogPostRepository;
+    private final CartLineItemRepository cartLineItemRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ReviewRepository reviewRepository;
+    private final WishlistRepository wishlistRepository;
+    private final OrderDetailRepository orderDetailRepository;
     private final OrderRepository orderRepository;
 
     public AdminOperationsApiController(
@@ -77,11 +88,21 @@ public class AdminOperationsApiController {
             CategoryRepository categoryRepository,
             BrandRepository brandRepository,
             BlogPostRepository blogPostRepository,
+            CartLineItemRepository cartLineItemRepository,
+            ProductImageRepository productImageRepository,
+            ReviewRepository reviewRepository,
+            WishlistRepository wishlistRepository,
+            OrderDetailRepository orderDetailRepository,
             OrderRepository orderRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.blogPostRepository = blogPostRepository;
+        this.cartLineItemRepository = cartLineItemRepository;
+        this.productImageRepository = productImageRepository;
+        this.reviewRepository = reviewRepository;
+        this.wishlistRepository = wishlistRepository;
+        this.orderDetailRepository = orderDetailRepository;
         this.orderRepository = orderRepository;
     }
 
@@ -166,17 +187,24 @@ public class AdminOperationsApiController {
     }
 
     @DeleteMapping("/products/{id}")
+    @Transactional
     public ResponseEntity<?> deleteProduct(@PathVariable int id) {
-        if (!productRepository.existsById(id)) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Khong tim thay san pham voi id: " + id));
         }
 
         try {
-            productRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
+            detachOrderDetails(product);
+            cartLineItemRepository.deleteByProduct(product);
+            wishlistRepository.deleteByProduct(product);
+            reviewRepository.deleteByProduct(product);
+            productImageRepository.deleteByProduct(product);
+            productRepository.delete(product);
+            return ResponseEntity.ok(new ProductDeleteResult(true, false, "Da xoa san pham.", null));
         } catch (DataIntegrityViolationException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new ApiError("Khong the xoa san pham dang duoc su dung trong don hang."));
+                    .body(new ApiError("Khong the xoa san pham do con rang buoc du lieu."));
         }
     }
 
@@ -771,6 +799,26 @@ public class AdminOperationsApiController {
                     "Trang thai don hang khong hop le. Cho phep: " + String.join(", ", ALLOWED_ORDER_STATUSES));
         }
         return normalized;
+    }
+
+    private void detachOrderDetails(Product product) {
+        List<OrderDetail> details = orderDetailRepository.findByProduct_Id(product.getId());
+        if (details.isEmpty()) {
+            return;
+        }
+
+        String fallbackName = trimToNull(product.getName());
+        if (fallbackName == null) {
+            fallbackName = "San pham #" + product.getId();
+        }
+
+        for (OrderDetail detail : details) {
+            if (isBlank(detail.getProductName())) {
+                detail.setProductName(fallbackName);
+            }
+            detail.setProduct(null);
+        }
+        orderDetailRepository.saveAll(details);
     }
 
     private boolean isBlank(String value) {

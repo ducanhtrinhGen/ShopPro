@@ -137,4 +137,11 @@ public final class AdminOpsDtos {
             String message,
             Integer referenceId) {
     }
+
+    public record ProductDeleteResult(
+            boolean deleted,
+            boolean deactivated,
+            String message,
+            AdminProductItem product) {
+    }
 }

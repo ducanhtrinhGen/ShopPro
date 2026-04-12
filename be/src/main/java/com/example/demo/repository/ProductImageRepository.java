@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ProductImageRepository extends JpaRepository<ProductImage, Integer> {
 
     boolean existsByProductAndImageUrl(Product product, String imageUrl);
+
+    long deleteByProduct(Product product);
 }

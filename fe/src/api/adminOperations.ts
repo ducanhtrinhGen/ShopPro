@@ -23,6 +23,13 @@ type ProductQuery = {
   threshold?: number;
 };
 
+export type DeleteAdminProductResult = {
+  deleted: boolean;
+  deactivated: boolean;
+  message: string;
+  product: AdminProductOpsItem | null;
+};
+
 export function getAdminOrders(query: OrderQuery = {}) {
   const params = new URLSearchParams();
 
@@ -103,7 +110,7 @@ export function updateAdminProduct(productId: number, payload: AdminProductUpser
 }
 
 export function deleteAdminProduct(productId: number) {
-  return apiRequest<void>(`/api/admin/products/${productId}`, {
+  return apiRequest<DeleteAdminProductResult>(`/api/admin/products/${productId}`, {
     method: "DELETE"
   });
 }
@@ -138,13 +145,16 @@ export async function uploadAdminCloudinaryImage(file: File, options: Cloudinary
 
   if (!response.ok) {
     const jsonBody = parseJsonSafely<{ message?: string }>(rawBody);
-    const message = jsonBody?.message ?? `Tải ảnh thất bại với mã ${response.status}`;
+    const plainText = rawBody.trim();
+    const looksLikeHtml = plainText.startsWith("<!DOCTYPE") || plainText.startsWith("<html");
+    const fallbackFromBody = !looksLikeHtml && plainText ? plainText : undefined;
+    const message = jsonBody?.message ?? fallbackFromBody ?? `Tai anh that bai voi ma ${response.status}`;
     throw new ApiRequestError(message, response.status);
   }
 
   const data = parseJsonSafely<AdminCloudinaryUploadResponse>(rawBody);
   if (!data) {
-    throw new ApiRequestError("Phản hồi upload ảnh không hợp lệ.", 500);
+    throw new ApiRequestError("Phan hoi upload anh khong hop le.", 500);
   }
 
   return data;

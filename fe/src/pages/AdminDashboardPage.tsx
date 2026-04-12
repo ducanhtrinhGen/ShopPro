@@ -340,7 +340,7 @@ export function AdminDashboardPage() {
           return;
         }
         setOrders([]);
-        setOrderError(toErrorMessage(error, "Không th? t?i danh s�ch đơn hàng."));
+        setOrderError(toErrorMessage(error, "Khong the tai danh sach don hang."));
       } finally {
         if (active) {
           setIsLoadingOrders(false);
@@ -375,7 +375,7 @@ export function AdminDashboardPage() {
         }
         setLowStock([]);
         setDataIssues([]);
-        setOpsError(toErrorMessage(error, "không th? t?i d? li?u t?n kho v� ki?m tra d? li?u."));
+        setOpsError(toErrorMessage(error, "Khong the tai du lieu ton kho va kiem tra du lieu."));
       } finally {
         if (active) {
           setIsLoadingOps(false);
@@ -415,7 +415,7 @@ export function AdminDashboardPage() {
           return;
         }
         setUsers([]);
-        setUserError(toErrorMessage(error, "Không th? t?i danh sch ti kho?n."));
+        setUserError(toErrorMessage(error, "Khong the tai danh sach tai khoan."));
       } finally {
         if (active) {
           setIsLoadingUsers(false);
@@ -450,7 +450,7 @@ export function AdminDashboardPage() {
         }
         setProducts([]);
         setBrands([]);
-        setProductError(toErrorMessage(error, "không th? t?i d? li?u Quản lý sản phẩm."));
+        setProductError(toErrorMessage(error, "Khong the tai du lieu quan ly san pham."));
       } finally {
         if (active) {
           setIsLoadingProducts(false);
@@ -580,17 +580,17 @@ export function AdminDashboardPage() {
 
   const sidebarPlaceholder =
     activeView === "categories"
-      ? "T�m theo danh mục / m� danh mục..."
+      ? "Tim theo danh muc / ma danh muc..."
       : activeView === "products"
-        ? "T�m theo m� sản phẩm / t�n sản phẩm..."
+        ? "Tim theo ma san pham / ten san pham..."
       : activeView === "orders"
-        ? "T�m theo m� don / kh�ch h�ng..."
-        : "Nh?p t? kh�a d? l?c d? li?u...";
+        ? "Tim theo ma don / khach hang..."
+        : "Nhap tu khoa de loc du lieu...";
 
   const handleOrderStatusUpdate = async (orderId: number) => {
     const targetStatus = (orderDraftStatus[orderId] ?? "").trim().toUpperCase();
     if (!targetStatus) {
-      setOrderMessage("Vui l�ng ch?n trạng thái hợp lý tru?c khi c?p nh?t.");
+      setOrderMessage("Vui long chon trang thai hop ly truoc khi cap nhat.");
       return;
     }
 
@@ -602,9 +602,9 @@ export function AdminDashboardPage() {
       setOrders((previous) =>
         previous.map((item) => (item.id === orderId ? { ...item, orderStatus: updatedOrder.orderStatus } : item))
       );
-      setOrderMessage(`�� c?p nh?t trạng thái don #${orderId} th�nh ${toStatusLabel(targetStatus)}.`);
+      setOrderMessage(`Da cap nhat trang thai don #${orderId} thanh ${toStatusLabel(targetStatus)}.`);
     } catch (error) {
-      setOrderMessage(toErrorMessage(error, `không th? c?p nh?t trạng thái don #${orderId}.`));
+      setOrderMessage(toErrorMessage(error, `Khong the cap nhat trang thai don #${orderId}.`));
     } finally {
       setUpdatingOrderId(null);
     }
@@ -619,7 +619,7 @@ export function AdminDashboardPage() {
     const password = newPassword.trim();
 
     if (!username || !password) {
-      setUserMessage("Vui l�ng nh?p d? tài khoản v� mật khẩu.");
+      setUserMessage("Vui long nhap du tai khoan va mat khau.");
       return;
     }
 
@@ -632,9 +632,9 @@ export function AdminDashboardPage() {
       setNewUsername("");
       setNewPassword("");
       setNewRole("staff");
-      setUserMessage(`�� t?o tài khoản ${created.username} (${toRoleLabel(created.role)}).`);
+      setUserMessage(`Da tao tai khoan ${created.username} (${toRoleLabel(created.role)}).`);
     } catch (error) {
-      setUserMessage(toErrorMessage(error, "không th? t?o tài khoản m?i."));
+      setUserMessage(toErrorMessage(error, "Khong the tao tai khoan moi."));
     } finally {
       setCreatingUser(false);
     }
@@ -649,9 +649,9 @@ export function AdminDashboardPage() {
     try {
       const updated = await updateAdminUserRole(target.id, role);
       setUsers((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-      setUserMessage(`�� d?i vai tr� c?a ${updated.username} th�nh ${toRoleLabel(updated.role)}.`);
+      setUserMessage(`Da doi vai tro cua ${updated.username} thanh ${toRoleLabel(updated.role)}.`);
     } catch (error) {
-      setUserMessage(toErrorMessage(error, `không th? d?i vai tr� cho ${target.username}.`));
+      setUserMessage(toErrorMessage(error, `Khong the doi vai tro cho ${target.username}.`));
     }
   };
 
@@ -665,10 +665,10 @@ export function AdminDashboardPage() {
       const updated = await updateAdminUserLockState(target.id, !target.locked);
       setUsers((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
       setUserMessage(
-        updated.locked ? `�� kh�a tài khoản ${updated.username}.` : `�� m? kh�a tài khoản ${updated.username}.`
+        updated.locked ? `Da khoa tai khoan ${updated.username}.` : `Da mo khoa tai khoan ${updated.username}.`
       );
     } catch (error) {
-      setUserMessage(toErrorMessage(error, `không th? c?p nh?t trạng thái kh�a cho ${target.username}.`));
+      setUserMessage(toErrorMessage(error, `Khong the cap nhat trang thai khoa cho ${target.username}.`));
     }
   };
 
@@ -677,7 +677,7 @@ export function AdminDashboardPage() {
       return;
     }
 
-    if (!window.confirm(`B?n ch?c ch?n mu?n x�a tài khoản ${target.username}?`)) {
+    if (!window.confirm(`Ban chac chan muon xoa tai khoan ${target.username}?`)) {
       return;
     }
 
@@ -685,9 +685,9 @@ export function AdminDashboardPage() {
     try {
       await deleteManagementUser(target.id);
       setUsers((previous) => previous.filter((item) => item.id !== target.id));
-      setUserMessage(`�� x�a tài khoản ${target.username}.`);
+      setUserMessage(`Da xoa tai khoan ${target.username}.`);
     } catch (error) {
-      setUserMessage(toErrorMessage(error, `không th? x�a tài khoản ${target.username}.`));
+      setUserMessage(toErrorMessage(error, `Khong the xoa tai khoan ${target.username}.`));
     }
   };
 
@@ -720,27 +720,27 @@ export function AdminDashboardPage() {
     const discountPrice = form.discountPrice.trim() ? Number(form.discountPrice) : null;
 
     if (!name) {
-      setProductMessage("Vui l�ng nh?p t�n sản phẩm.");
+      setProductMessage("Vui long nhap ten san pham.");
       return null;
     }
     if (!Number.isInteger(categoryId) || categoryId <= 0) {
-      setProductMessage("Vui l�ng ch?n danh mục hợp lý.");
+      setProductMessage("Vui long chon danh muc hop ly.");
       return null;
     }
     if (!Number.isInteger(brandId) || brandId <= 0) {
-      setProductMessage("Vui l�ng ch?n thương hiệu hợp lý.");
+      setProductMessage("Vui long chon thuong hieu hop ly.");
       return null;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      setProductMessage("giá ni�m y?t ph?i l?n hon 0.");
+      setProductMessage("Gia niem yet phai lon hon 0.");
       return null;
     }
     if (!Number.isInteger(quantity) || quantity < 0) {
-      setProductMessage("T?n kho ph?i >= 0.");
+      setProductMessage("Ton kho phai >= 0.");
       return null;
     }
     if (discountPrice !== null && (!Number.isFinite(discountPrice) || discountPrice <= 0 || discountPrice >= price)) {
-      setProductMessage("giá giảm ph?i > 0 v� nh? hon giá ni�m y?t.");
+      setProductMessage("Gia giam phai > 0 va nho hon gia niem yet.");
       return null;
     }
 
@@ -775,12 +775,12 @@ export function AdminDashboardPage() {
         const created = await createAdminProduct(payload);
         setProducts((previous) => [created, ...previous]);
         setStats((previous) => ({ ...previous, productTotal: previous.productTotal + 1 }));
-        setProductMessage(`�� t?o sản phẩm ${created.name}.`);
+        setProductMessage(`Da tao san pham ${created.name}.`);
         resetProductForm();
       } else {
         const updated = await updateAdminProduct(editingProductId, payload);
         setProducts((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-        setProductMessage(`�� c?p nh?t sản phẩm ${updated.name}.`);
+        setProductMessage(`Da cap nhat san pham ${updated.name}.`);
         setEditingProductId(updated.id);
         setProductForm(productToForm(updated));
       }
@@ -803,7 +803,7 @@ export function AdminDashboardPage() {
   };
 
   const handleDeleteProduct = async (product: AdminProductOpsItem) => {
-    if (!window.confirm(`B?n ch?c ch?n mu?n x�a sản phẩm ${product.name}?`)) {
+    if (!window.confirm(`Ban chac chan muon xoa san pham ${product.name}?`)) {
       return;
     }
 
@@ -817,12 +817,12 @@ export function AdminDashboardPage() {
         ...previous,
         productTotal: previous.productTotal > 0 ? previous.productTotal - 1 : 0
       }));
-      setProductMessage(`�� x�a sản phẩm ${product.name}.`);
+      setProductMessage(`Da xoa san pham ${product.name}.`);
       if (editingProductId === product.id) {
         resetProductForm();
       }
     } catch (error) {
-      setProductMessage(toErrorMessage(error, `không th? x�a sản phẩm ${product.name}.`));
+      setProductMessage(toErrorMessage(error, `Khong the xoa san pham ${product.name}.`));
     } finally {
       setDeletingProductId(null);
     }
@@ -830,7 +830,7 @@ export function AdminDashboardPage() {
 
   const handleUploadProductImage = async () => {
     if (!selectedUploadFile) {
-      setProductMessage("Vui l�ng ch?n file ?nh tru?c khi upload.");
+      setProductMessage("Vui long chon file anh truoc khi upload.");
       return;
     }
 
@@ -847,13 +847,13 @@ export function AdminDashboardPage() {
         image: uploaded.secureUrl,
         thumbnail: uploaded.secureUrl
       }));
-      setProductMessage("�� upload ?nh l�n Cloudinary.");
+      setProductMessage("Da upload anh len Cloudinary.");
       setSelectedUploadFile(null);
       if (uploadInputRef.current) {
         uploadInputRef.current.value = "";
       }
     } catch (error) {
-      setProductMessage(toErrorMessage(error, "không th? upload ?nh."));
+      setProductMessage(toErrorMessage(error, "Khong the upload anh."));
     } finally {
       setUploadingProductImage(false);
     }
@@ -864,7 +864,7 @@ export function AdminDashboardPage() {
       <>
         <section className="owner-crm-kpi-grid">
           <article>
-            <span>Tổng m?t h�ng</span>
+            <span>Tong mat hang</span>
             <strong>{stats.productTotal}</strong>
           </article>
           <article>
@@ -876,38 +876,38 @@ export function AdminDashboardPage() {
             <strong>{orders.length}</strong>
           </article>
           <article>
-            <span>�on c?n x? l�</span>
+            <span>Don can xu ly</span>
             <strong>{pendingOrders}</strong>
           </article>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Nhi?m v? qu?n tr?</h2>
+            <h2>Nhiem vu quan tri</h2>
             <div className="owner-crm-toolbar">
               <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to="/owner-staff">Sang b?ng di?u khi?n Staff</Link>
+              <Link to="/owner-staff">Sang bang dieu khien Staff</Link>
             </div>
           </div>
 
           <div className="owner-crm-admin-dual">
             <article className="owner-crm-admin-block">
-              <h3>Ph?m vi Admin h?ng ng�y</h3>
+              <h3>Pham vi Admin hang ngay</h3>
               <ul>
                 <li>CRUD sản phẩm, danh mục, thương hiệu.</li>
-                <li>Xem v� c?p nh?t trạng thái đơn hàng.</li>
-                <li>Ki?m tra t?n kho th?p v� l?i d? li?u v?n h�nh.</li>
-                <li>Quản lý n?i dung website theo quy tr�nh.</li>
+                <li>Xem va cap nhat trang thai don hang.</li>
+                <li>Kiem tra ton kho thap va loi du lieu van hanh.</li>
+                <li>Quan ly noi dung website theo quy trinh.</li>
               </ul>
             </article>
 
             <article className="owner-crm-admin-block">
-              <h3>Quy?n b? sung c?a Owner</h3>
+              <h3>Quyen bo sung cua Owner</h3>
               <ul>
-                <li>To�n quy?n t?o, s?a, kh�a, x�a admin/staff/user.</li>
-                <li>Xem to�n b? d? li?u h? th?ng v� b�o c�o cao nh?t.</li>
-                <li>Duy?t thay d?i quan tr?ng v� c?u h�nh website.</li>
-                <li>Quy?t d?nh chi?n lu?c khuy?n m�i v� giá b�n.</li>
+                <li>Toan quyen tao, sua, khoa, xoa admin/staff/user.</li>
+                <li>Xem toan bo du lieu he thong va bao cao cao nhat.</li>
+                <li>Duyet thay doi quan trong va cau hinh website.</li>
+                <li>Quyet dinh chien luoc khuyen mai va gia ban.</li>
               </ul>
             </article>
           </div>
@@ -915,11 +915,11 @@ export function AdminDashboardPage() {
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>T?n kho v� ch?t lu?ng d? li?u</h2>
+            <h2>Ton kho va chat luong du lieu</h2>
           </div>
 
           {isLoadingOps ? (
-            <p className="owner-crm-empty">�ang t?i d? li?u t?n kho v� l?i d? li?u...</p>
+            <p className="owner-crm-empty">Dang tai du lieu ton kho va loi du lieu...</p>
           ) : null}
 
           {opsError ? <p className="owner-crm-empty">{opsError}</p> : null}
@@ -927,7 +927,7 @@ export function AdminDashboardPage() {
           {!isLoadingOps && !opsError ? (
             <div className="owner-crm-admin-dual">
               <article className="owner-crm-admin-block">
-                <h3>C?nh b�o t?n kho th?p</h3>
+                <h3>Canh bao ton kho thap</h3>
                 {lowStock.length ? (
                   <ul>
                     {lowStock.slice(0, 8).map((item) => (
@@ -937,12 +937,12 @@ export function AdminDashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p>không c� sản phẩm n�o du?i ngu?ng t?n kho.</p>
+                  <p>Khong co san pham nao duoi nguong ton kho.</p>
                 )}
               </article>
 
               <article className="owner-crm-admin-block">
-                <h3>L?i d? li?u c?n x? l�</h3>
+                <h3>Loi du lieu can xu ly</h3>
                 {dataIssues.length ? (
                   <ul>
                     {dataIssues.slice(0, 8).map((issue, index) => (
@@ -952,7 +952,7 @@ export function AdminDashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p>không ph�t hi?n l?i d? li?u nghi�m tr?ng.</p>
+                  <p>Khong phat hien loi du lieu nghiem trong.</p>
                 )}
               </article>
             </div>
@@ -971,25 +971,25 @@ export function AdminDashboardPage() {
             <strong>{stats.categoryTotal}</strong>
           </article>
           <article>
-            <span>danh mục dang l?c</span>
+            <span>danh muc dang loc</span>
             <strong>{filteredCategories.length}</strong>
           </article>
           <article>
-            <span>danh mục dang ch?n</span>
-            <strong>{selectedCategory ? selectedCategory.name : "T?t c?"}</strong>
+            <span>danh muc dang chon</span>
+            <strong>{selectedCategory ? selectedCategory.name : "Tat ca"}</strong>
           </article>
           <article>
-            <span>Tổng m?t h�ng</span>
+            <span>Tong mat hang</span>
             <strong>{stats.productTotal}</strong>
           </article>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>danh mục hi?n c� ({filteredCategories.length})</h2>
+            <h2>danh muc hien co ({filteredCategories.length})</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={() => setSelectedCategoryId(null)}>
-                Hi?n t?t c? danh mục
+                Hien tat ca danh muc
               </button>
             </div>
           </div>
@@ -999,9 +999,9 @@ export function AdminDashboardPage() {
               <table className="owner-crm-table">
                 <thead>
                   <tr>
-                    <th>M� danh mục</th>
-                    <th>T�n danh mục</th>
-                    <th>H�nh d?ng</th>
+                    <th>Ma danh muc</th>
+                    <th>Ten danh muc</th>
+                    <th>Hanh dong</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1031,30 +1031,30 @@ export function AdminDashboardPage() {
               </table>
             </div>
           ) : (
-            <p className="owner-crm-empty">không t�m th?y danh mục ph� h?p v?i t? kh�a hi?n t?i.</p>
+            <p className="owner-crm-empty">Khong tim thay danh muc phu hop voi tu khoa hien tai.</p>
           )}
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Chi ti?t danh mục</h2>
+            <h2>Chi tiet danh muc</h2>
           </div>
 
           {selectedCategory ? (
             <div className="owner-crm-category-detail">
               <p>
-                <strong>M� danh mục:</strong> DM{String(selectedCategory.id).padStart(3, "0")}
+                <strong>Ma danh muc:</strong> DM{String(selectedCategory.id).padStart(3, "0")}
               </p>
               <p>
-                <strong>T�n danh mục:</strong> {selectedCategory.name}
+                <strong>Ten danh muc:</strong> {selectedCategory.name}
               </p>
               <div className="owner-crm-category-links">
-                <Link to={`/products?categoryId=${selectedCategory.id}`}>M? trang sản phẩm theo danh mục</Link>
-                <Link to="/products">M? to�n b? sản phẩm</Link>
+                <Link to={`/products?categoryId=${selectedCategory.id}`}>Mo trang san pham theo danh muc</Link>
+                <Link to="/products">Mo toan bo san pham</Link>
               </div>
             </div>
           ) : (
-            <p className="owner-crm-empty">Ch?n m?t danh mục trong b?ng b�n tr�n d? xem chi ti?t.</p>
+            <p className="owner-crm-empty">Chon mot danh muc trong bang ben tren de xem chi tiet.</p>
           )}
         </section>
       </>
@@ -1072,7 +1072,7 @@ export function AdminDashboardPage() {
             <strong>{products.length}</strong>
           </article>
           <article>
-            <span>?ang b�n</span>
+            <span>Dang ban</span>
             <strong>{activeProductsCount}</strong>
           </article>
           <article>
@@ -1080,7 +1080,7 @@ export function AdminDashboardPage() {
             <strong>{discountedProductsCount}</strong>
           </article>
           <article>
-            <span>T?n kho th?p (&lt;=5)</span>
+            <span>Ton kho thap (&lt;=5)</span>
             <strong>{lowStockProductsCount}</strong>
           </article>
         </section>
@@ -1090,7 +1090,7 @@ export function AdminDashboardPage() {
             <h2>CRUD sản phẩm</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={resetProductForm}>
-                {editingProductId === null ? "L�m m?i form" : "Tho�t ch? d? s?a"}
+                {editingProductId === null ? "Lam moi form" : "Thoat che do sua"}
               </button>
               <button type="button" onClick={() => setActiveView("categories")}>
                 Quản lý danh mục
@@ -1104,12 +1104,12 @@ export function AdminDashboardPage() {
           <div className="owner-crm-product-layout">
             <div className="owner-crm-product-form">
               <label>
-                <span>T�n sản phẩm *</span>
+                <span>Ten san pham *</span>
                 <input
                   type="text"
                   value={productForm.name}
                   onChange={(event) => handleProductFieldChange("name", event.target.value)}
-                  placeholder="V� d?: RTX 5070 12GB"
+                  placeholder="Vi du: RTX 5070 12GB"
                 />
               </label>
               <label>
@@ -1118,7 +1118,7 @@ export function AdminDashboardPage() {
                   type="text"
                   value={productForm.slug}
                   onChange={(event) => handleProductFieldChange("slug", event.target.value)}
-                  placeholder="tu d?ng sinh n?u b? tr?ng"
+                  placeholder="tu dong sinh neu bo trong"
                 />
               </label>
 
@@ -1128,7 +1128,7 @@ export function AdminDashboardPage() {
                   value={productForm.categoryId}
                   onChange={(event) => handleProductFieldChange("categoryId", event.target.value)}
                 >
-                  <option value="">Ch?n danh mục</option>
+                  <option value="">Chon danh muc</option>
                   {stats.categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -1139,7 +1139,7 @@ export function AdminDashboardPage() {
               <label>
                 <span>thương hiệu *</span>
                 <select value={productForm.brandId} onChange={(event) => handleProductFieldChange("brandId", event.target.value)}>
-                  <option value="">Ch?n thương hiệu</option>
+                  <option value="">Chon thuong hieu</option>
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
@@ -1149,7 +1149,7 @@ export function AdminDashboardPage() {
               </label>
 
               <label>
-                <span>giá ni�m y?t *</span>
+                <span>Gia niem yet *</span>
                 <input
                   type="number"
                   min={0}
@@ -1165,12 +1165,12 @@ export function AdminDashboardPage() {
                   min={0}
                   value={productForm.discountPrice}
                   onChange={(event) => handleProductFieldChange("discountPrice", event.target.value)}
-                  placeholder="B? tr?ng n?u không giảm"
+                  placeholder="Bo trong neu khong giam"
                 />
               </label>
 
               <label>
-                <span>T?n kho *</span>
+                <span>Ton kho *</span>
                 <input
                   type="number"
                   min={0}
@@ -1207,12 +1207,12 @@ export function AdminDashboardPage() {
                   type="text"
                   value={productForm.thumbnail}
                   onChange={(event) => handleProductFieldChange("thumbnail", event.target.value)}
-                  placeholder="n?u tr?ng s? d�ng chung link ?nh"
+                  placeholder="neu trong se dung chung link anh"
                 />
               </label>
 
               <label className="is-wide">
-                <span>T?i ?nh l�n Cloudinary</span>
+                <span>Tai anh len Cloudinary</span>
                 <div className="owner-crm-product-upload-row">
                   <input
                     ref={uploadInputRef}
@@ -1227,7 +1227,7 @@ export function AdminDashboardPage() {
               </label>
 
               <label className="is-wide">
-                <span>M� t? ng?n</span>
+                <span>Mo ta ngan</span>
                 <textarea
                   rows={2}
                   value={productForm.shortDescription}
@@ -1235,7 +1235,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label className="is-wide">
-                <span>M� t? chi ti?t</span>
+                <span>Mo ta chi tiet</span>
                 <textarea
                   rows={3}
                   value={productForm.description}
@@ -1243,7 +1243,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label className="is-wide">
-                <span>Th�ng s? k? thu?t</span>
+                <span>Thong so ky thuat</span>
                 <textarea
                   rows={3}
                   value={productForm.specifications}
@@ -1254,13 +1254,13 @@ export function AdminDashboardPage() {
 
             <div className="owner-crm-product-side">
               <div className="owner-crm-product-preview">
-                <p>Xem tru?c ?nh</p>
+                <p>Xem truoc anh</p>
                 {productForm.thumbnail || productForm.image ? (
                   <img src={productForm.thumbnail || productForm.image} alt="preview" />
                 ) : (
-                  <div className="owner-crm-product-preview-empty">Chua c� ?nh</div>
+                  <div className="owner-crm-product-preview-empty">Chua co anh</div>
                 )}
-                <strong>{editingProduct ? `Dang s?a #${editingProduct.id}` : "Tao m?i san pham"}</strong>
+                <strong>{editingProduct ? `Dang sua #${editingProduct.id}` : "Tao moi san pham"}</strong>
               </div>
 
               <div className="owner-crm-inline-actions">
@@ -1279,13 +1279,13 @@ export function AdminDashboardPage() {
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Danh s�ch sản phẩm ({filteredProducts.length})</h2>
+            <h2>Danh sach san pham ({filteredProducts.length})</h2>
             <div className="owner-crm-toolbar">
               <select
                 value={productCategoryFilter === null ? "ALL" : String(productCategoryFilter)}
                 onChange={(event) => setProductCategoryFilter(event.target.value === "ALL" ? null : Number(event.target.value))}
               >
-                <option value="ALL">T?t c? danh mục</option>
+                <option value="ALL">Tat ca danh mục</option>
                 {stats.categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -1297,9 +1297,9 @@ export function AdminDashboardPage() {
                 value={productStatusFilter}
                 onChange={(event) => setProductStatusFilter(event.target.value as ProductStatusFilter)}
               >
-                <option value="ALL">T?t c? trạng thái</option>
-                <option value="ACTIVE">Dang b�n</option>
-                <option value="INACTIVE">Ng?ng b�n</option>
+                <option value="ALL">Tat ca trạng thái</option>
+                <option value="ACTIVE">Dang ban</option>
+                <option value="INACTIVE">Ngung ban</option>
               </select>
 
               <button
@@ -1332,9 +1332,9 @@ export function AdminDashboardPage() {
                     <th>danh mục</th>
                     <th>thương hiệu</th>
                     <th>giá / giảm</th>
-                    <th>T?n kho</th>
+                    <th>Ton kho</th>
                     <th>trạng thái</th>
-                    <th>Thao t�c</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1413,15 +1413,15 @@ export function AdminDashboardPage() {
             <strong>{orders.length}</strong>
           </article>
           <article>
-            <span>�on dang l?c</span>
+            <span>Don dang loc</span>
             <strong>{filteredOrders.length}</strong>
           </article>
           <article>
-            <span>�on ch? x? l�</span>
+            <span>Don cho xu ly</span>
             <strong>{pendingOrders}</strong>
           </article>
           <article>
-            <span>Doanh thu t?m t�nh</span>
+            <span>Doanh thu tam tinh</span>
             <strong>{moneyFormatter.format(totalRevenue)}</strong>
           </article>
         </section>
@@ -1432,17 +1432,17 @@ export function AdminDashboardPage() {
             <div className="owner-crm-toolbar">
               <input
                 type="text"
-                placeholder="T�m theo m� don / kh�ch h�ng..."
+                placeholder="Tim theo ma don / khach hang..."
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
               />
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as OrderStatusFilter)}>
-                <option value="ALL">T?t c? trạng thái</option>
-                <option value="PENDING">Ch? x? l�</option>
-                <option value="PROCESSING">�ang x? l�</option>
-                <option value="SHIPPING">�ang giao</option>
-                <option value="COMPLETED">Ho�n t?t</option>
-                <option value="CANCELLED">�� h?y</option>
+                <option value="ALL">Tat ca trạng thái</option>
+                <option value="PENDING">Cho xu ly</option>
+                <option value="PROCESSING">Dang xu ly</option>
+                <option value="SHIPPING">Dang giao</option>
+                <option value="COMPLETED">Hoan tat</option>
+                <option value="CANCELLED">Da huy</option>
               </select>
               <button
                 type="button"
@@ -1451,17 +1451,17 @@ export function AdminDashboardPage() {
                   setStatusFilter("ALL");
                 }}
               >
-                �?t l?i
+                Dat lai
               </button>
             </div>
           </div>
 
           {orderMessage ? <p className="owner-crm-empty">{orderMessage}</p> : null}
           {orderError ? <p className="owner-crm-empty">{orderError}</p> : null}
-          {isLoadingOrders ? <p className="owner-crm-empty">�ang t?i danh s�ch đơn hàng...</p> : null}
+          {isLoadingOrders ? <p className="owner-crm-empty">Dang tai danh sach don hang...</p> : null}
 
           {!isLoadingOrders && !orderError && !filteredOrders.length ? (
-            <p className="owner-crm-empty">không c� đơn hàng ph� h?p v?i di?u ki?n l?c hi?n t?i.</p>
+            <p className="owner-crm-empty">Khong co don hang phu hop voi dieu kien loc hien tai.</p>
           ) : null}
 
           {!isLoadingOrders && !orderError && filteredOrders.length ? (
@@ -1469,15 +1469,15 @@ export function AdminDashboardPage() {
               <table className="owner-crm-table">
                 <thead>
                   <tr>
-                    <th>M� don</th>
-                    <th>Kh�ch h�ng</th>
-                    <th>Ngu?i nh?n</th>
+                    <th>Ma don</th>
+                    <th>Khach hang</th>
+                    <th>Nguoi nhan</th>
                     <th>Th?</th>
-                    <th>Thanh to�n</th>
+                    <th>Thanh toan</th>
                     <th>trạng thái</th>
-                    <th>Tổng ti?n</th>
-                    <th>Th?i gian</th>
-                    <th>C?p nh?t</th>
+                    <th>Tong tien</th>
+                    <th>Thoi gian</th>
+                    <th>Cap nhat</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1490,11 +1490,11 @@ export function AdminDashboardPage() {
                         <td>
                           <strong>{order.customerUsername}</strong>
                         </td>
-                        <td>{order.receiverName || "Chua c?p nh?t"}</td>
+                        <td>{order.receiverName || "Chua cap nhat"}</td>
                         <td>
                           <span className="owner-crm-chip">{toOrderTag(index)}</span>
                         </td>
-                        <td>{order.paymentMethod || "không r�"}</td>
+                        <td>{order.paymentMethod || "Khong ro"}</td>
                         <td>
                           <span className={`owner-crm-status ${toStatusClass(order.orderStatus)}`}>
                             {toStatusLabel(order.orderStatus)}
@@ -1526,7 +1526,7 @@ export function AdminDashboardPage() {
                               disabled={updatingOrderId === order.id}
                               onClick={() => void handleOrderStatusUpdate(order.id)}
                             >
-                              {updatingOrderId === order.id ? "�ang c?p nh?t..." : "C?p nh?t"}
+                              {updatingOrderId === order.id ? "Dang cap nhat..." : "Cap nhat"}
                             </button>
                           </div>
                         </td>
@@ -1547,9 +1547,9 @@ export function AdminDashboardPage() {
       return (
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Quản lý ngu?i d�ng</h2>
+            <h2>Quan ly nguoi dung</h2>
           </div>
-          <p className="owner-crm-empty">tài khoản Admin không c� quy?n t?o, x�a, d?i vai tr� ho?c kh�a/m? tài khoản.</p>
+          <p className="owner-crm-empty">Tai khoan Admin khong co quyen tao, xoa, doi vai tro hoac khoa/mo tai khoan.</p>
         </section>
       );
     }
@@ -1570,20 +1570,20 @@ export function AdminDashboardPage() {
             <strong>{staffCount}</strong>
           </article>
           <article>
-            <span>�ang kh�a</span>
+            <span>Dang khoa</span>
             <strong>{lockedUserCount}</strong>
           </article>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>T?o tài khoản v?n h�nh</h2>
+            <h2>Tao tai khoan van hanh</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={() => setNewRole("staff")}>
-                Ch?n Staff
+                Chon Staff
               </button>
               <button type="button" onClick={() => setNewRole("admin")}>
-                Ch?n Admin
+                Chon Admin
               </button>
             </div>
           </div>
@@ -1596,7 +1596,7 @@ export function AdminDashboardPage() {
               type="text"
               value={newUsername}
               onChange={(event) => setNewUsername(event.target.value)}
-              placeholder="T�n dang nh?p"
+              placeholder="Ten dang nhap"
             />
             <input
               type="password"
@@ -1612,20 +1612,20 @@ export function AdminDashboardPage() {
               ))}
             </select>
             <button type="button" disabled={creatingUser} onClick={() => void handleCreateUser()}>
-              {creatingUser ? "�ang t?o..." : "T?o tài khoản"}
+              {creatingUser ? "Dang tao..." : "Tao tai khoan"}
             </button>
           </div>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Danh s�ch tài khoản ({ownerManagedUsers.length})</h2>
+            <h2>Danh sach tai khoan ({ownerManagedUsers.length})</h2>
           </div>
 
-          {isLoadingUsers ? <p className="owner-crm-empty">�ang t?i danh s�ch tài khoản...</p> : null}
+          {isLoadingUsers ? <p className="owner-crm-empty">Dang tai danh sach tai khoan...</p> : null}
 
           {!isLoadingUsers && !ownerManagedUsers.length ? (
-            <p className="owner-crm-empty">Chua c� tài khoản v?n h�nh n�o d? hi?n th?.</p>
+            <p className="owner-crm-empty">Chua co tai khoan van hanh nao de hien thi.</p>
           ) : null}
 
           {!isLoadingUsers && ownerManagedUsers.length ? (
@@ -1635,9 +1635,9 @@ export function AdminDashboardPage() {
                   <tr>
                     <th>ID</th>
                     <th>tài khoản</th>
-                    <th>Vai tr�</th>
+                    <th>Vai tro</th>
                     <th>trạng thái</th>
-                    <th>Thao t�c</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1652,7 +1652,7 @@ export function AdminDashboardPage() {
                       </td>
                       <td>
                         <span className={`role-admin-badge ${item.locked ? "is-locked" : "is-active"}`}>
-                          {item.locked ? "�� kh�a" : "�ang ho?t d?ng"}
+                          {item.locked ? "Da khoa" : "Dang hoat dong"}
                         </span>
                       </td>
                       <td>
@@ -1676,7 +1676,7 @@ export function AdminDashboardPage() {
                             className="role-admin-button role-admin-button-danger"
                             onClick={() => void handleDeleteUser(item)}
                           >
-                            X�a
+                            Xoa
                           </button>
                         </div>
                       </td>
@@ -1710,7 +1710,7 @@ export function AdminDashboardPage() {
           </label>
 
           <div className="owner-crm-nav-group">
-            <p>�I?U HU?NG</p>
+            <p>DIEU HUONG</p>
             <button type="button" className={activeView === "overview" ? "active" : ""} onClick={() => setActiveView("overview")}>
               Tổng quan
             </button>
@@ -1725,52 +1725,52 @@ export function AdminDashboardPage() {
               sản phẩm
             </button>
             <button type="button" className={activeView === "orders" ? "active" : ""} onClick={() => setActiveView("orders")}>
-              �on h�ng
+              Don hang
             </button>
             {isOwner ? (
               <button type="button" className={activeView === "users" ? "active" : ""} onClick={() => setActiveView("users")}>
-                Ngu?i d�ng
+                Nguoi dung
               </button>
             ) : null}
           </div>
 
           <div className="owner-crm-sidebar-actions">
-            <Link to="/products">M? trang sản phẩm</Link>
-            <Link to="/owner-staff">B?ng di?u khi?n Staff</Link>
+            <Link to="/products">Mo trang san pham</Link>
+            <Link to="/owner-staff">Bang dieu khien Staff</Link>
           </div>
         </aside>
 
         <div className="owner-crm-main">
           <header className="owner-crm-header">
             <div>
-              <p className="owner-crm-kicker">{isOwner ? "B?NG �I?U H�NH OWNER/ADMIN" : "B?NG �I?U H�NH ADMIN"}</p>
+              <p className="owner-crm-kicker">{isOwner ? "BANG DIEU HANH OWNER/ADMIN" : "BANG DIEU HANH ADMIN"}</p>
               <h1>
                 {activeView === "overview"
-                  ? "Trung t�m di?u h�nh qu?n tr?"
+                  ? "Trung tam dieu hanh quan tri"
                   : activeView === "categories"
                     ? "Quản lý danh mục sản phẩm"
                     : activeView === "products"
-                      ? "Quản lý sản phẩm, kho v� giảm giá"
+                      ? "Quan ly san pham, kho va giam gia"
                     : activeView === "orders"
                       ? "Quản lý đơn hàng"
-                      : "Quản lý ngu?i d�ng h? th?ng"}
+                      : "Quan ly nguoi dung he thong"}
               </h1>
               <p>
                 {activeView === "overview"
-                  ? "Theo d�i KPI, đơn hàng, t?n kho v� d? li?u v?n h�nh trong c�ng b?ng di?u khi?n."
+                  ? "Theo doi KPI, don hang, ton kho va du lieu van hanh trong cung bang dieu khien."
                   : activeView === "categories"
-                    ? "Trang danh mục d�ng c�ng b? c?c v?i Owner d? d? theo d�i v� thao t�c."
+                    ? "Trang danh muc dung cung bo cuc voi Owner de de theo doi va thao tac."
                     : activeView === "products"
-                      ? "Admin CRUD sản phẩm ngay t?i day: c?p nh?t ?nh, t?n kho v� giá giảm theo nhu c?u."
+                      ? "Admin CRUD san pham ngay tai day: cap nhat anh, ton kho va gia giam theo nhu cau."
                     : activeView === "orders"
-                      ? "Admin v� Owner d?u c� th? xem v� c?p nh?t trạng thái đơn hàng."
-                      : "Ch? Owner c� quy?n t?o, d?i vai tr�, kh�a/m? ho?c x�a tài khoản qu?n tr?."}
+                      ? "Admin va Owner deu co the xem va cap nhat trang thai don hang."
+                      : "Chi Owner co quyen tao, doi vai tro, khoa/mo hoac xoa tai khoan quan tri."}
               </p>
             </div>
 
             <div className="owner-crm-header-actions">
               <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to="/owner-staff">Sang b?ng di?u khi?n Staff</Link>
+              <Link to="/owner-staff">Sang bang dieu khien Staff</Link>
             </div>
           </header>
 
@@ -1783,23 +1783,23 @@ export function AdminDashboardPage() {
           {activeView !== "users" ? (
             <section className="owner-crm-panel">
               <div className="owner-crm-panel-head">
-                <h2>T�m t?t nhanh</h2>
+                <h2>Tom tat nhanh</h2>
               </div>
               <div className="owner-crm-kpi-grid">
                 <article>
-                  <span>Khách h�ng g?n d�y</span>
+                  <span>Khach hang gan day</span>
                   <strong>{customerCount}</strong>
                 </article>
                 <article>
-                  <span>sản phẩm t?n th?p</span>
+                  <span>San pham ton thap</span>
                   <strong>{lowStock.length}</strong>
                 </article>
                 <article>
-                  <span>L?i d? li?u</span>
+                  <span>Loi du lieu</span>
                   <strong>{dataIssues.length}</strong>
                 </article>
                 <article>
-                  <span>Ngu?i d�ng qu?n tr?</span>
+                  <span>Nguoi dung quan tri</span>
                   <strong>{isOwner ? users.length : "Owner only"}</strong>
                 </article>
               </div>
@@ -1810,3 +1810,5 @@ export function AdminDashboardPage() {
     </section>
   );
 }
+
+

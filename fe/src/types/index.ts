@@ -149,6 +149,37 @@ export type AdminProductOpsItem = {
   createdAt: string;
 };
 
+export type AdminBrandItem = {
+  id: number;
+  name: string;
+  description: string | null;
+  status: string;
+};
+
+export type AdminProductUpsertPayload = {
+  name: string;
+  slug?: string | null;
+  categoryId: number;
+  brandId: number;
+  price: number;
+  discountPrice?: number | null;
+  quantity: number;
+  shortDescription?: string | null;
+  description?: string | null;
+  specifications?: string | null;
+  image?: string | null;
+  thumbnail?: string | null;
+  status?: string | null;
+};
+
+export type AdminCloudinaryUploadResponse = {
+  secureUrl: string;
+  publicId: string;
+  format: string;
+  bytes: number;
+  productId: number | null;
+};
+
 export type AdminDataIssue = {
   code: string;
   message: string;

@@ -1,14 +1,26 @@
-import { apiRequest } from "./client";
+import { ApiRequestError, apiRequest } from "./client";
 import type {
   AdminDataIssue,
+  AdminBrandItem,
+  AdminCloudinaryUploadResponse,
   AdminOrderDetailResponse,
   AdminOrderItem,
-  AdminProductOpsItem
+  AdminProductOpsItem,
+  AdminProductUpsertPayload
 } from "../types";
 
 type OrderQuery = {
   status?: string;
   keyword?: string;
+};
+
+type ProductQuery = {
+  keyword?: string;
+  categoryId?: number | null;
+  brandId?: number | null;
+  status?: string;
+  lowStockOnly?: boolean;
+  threshold?: number;
 };
 
 export function getAdminOrders(query: OrderQuery = {}) {
@@ -43,4 +55,109 @@ export function getAdminLowStockProducts(threshold = 5) {
 
 export function getAdminDataIssues() {
   return apiRequest<AdminDataIssue[]>("/api/admin/data-health/issues");
+}
+
+export function getAdminProducts(query: ProductQuery = {}) {
+  const params = new URLSearchParams();
+
+  if (query.keyword?.trim()) {
+    params.set("keyword", query.keyword.trim());
+  }
+  if (query.categoryId !== undefined && query.categoryId !== null) {
+    params.set("categoryId", String(query.categoryId));
+  }
+  if (query.brandId !== undefined && query.brandId !== null) {
+    params.set("brandId", String(query.brandId));
+  }
+  if (query.status?.trim()) {
+    params.set("status", query.status.trim());
+  }
+  if (query.lowStockOnly) {
+    params.set("lowStockOnly", "true");
+    if (query.threshold !== undefined) {
+      params.set("threshold", String(query.threshold));
+    }
+  }
+
+  const suffix = params.toString();
+  const url = suffix ? `/api/admin/products?${suffix}` : "/api/admin/products";
+  return apiRequest<AdminProductOpsItem[]>(url);
+}
+
+export function getAdminProductById(productId: number) {
+  return apiRequest<AdminProductOpsItem>(`/api/admin/products/${productId}`);
+}
+
+export function createAdminProduct(payload: AdminProductUpsertPayload) {
+  return apiRequest<AdminProductOpsItem>("/api/admin/products", {
+    method: "POST",
+    body: payload
+  });
+}
+
+export function updateAdminProduct(productId: number, payload: AdminProductUpsertPayload) {
+  return apiRequest<AdminProductOpsItem>(`/api/admin/products/${productId}`, {
+    method: "PUT",
+    body: payload
+  });
+}
+
+export function deleteAdminProduct(productId: number) {
+  return apiRequest<void>(`/api/admin/products/${productId}`, {
+    method: "DELETE"
+  });
+}
+
+export function getAdminBrands() {
+  return apiRequest<AdminBrandItem[]>("/api/admin/brands");
+}
+
+type CloudinaryUploadOptions = {
+  folder?: string;
+  productId?: number;
+};
+
+export async function uploadAdminCloudinaryImage(file: File, options: CloudinaryUploadOptions = {}) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  if (options.folder?.trim()) {
+    formData.append("folder", options.folder.trim());
+  }
+  if (options.productId !== undefined) {
+    formData.append("productId", String(options.productId));
+  }
+
+  const response = await fetch("/api/admin/cloudinary/upload", {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  });
+
+  const rawBody = await response.text();
+
+  if (!response.ok) {
+    const jsonBody = parseJsonSafely<{ message?: string }>(rawBody);
+    const message = jsonBody?.message ?? `Tải ảnh thất bại với mã ${response.status}`;
+    throw new ApiRequestError(message, response.status);
+  }
+
+  const data = parseJsonSafely<AdminCloudinaryUploadResponse>(rawBody);
+  if (!data) {
+    throw new ApiRequestError("Phản hồi upload ảnh không hợp lệ.", 500);
+  }
+
+  return data;
+}
+
+function parseJsonSafely<T>(rawText: string): T | undefined {
+  if (!rawText) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawText) as T;
+  } catch {
+    return undefined;
+  }
 }

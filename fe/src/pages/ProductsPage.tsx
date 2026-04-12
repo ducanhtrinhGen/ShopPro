@@ -199,6 +199,57 @@ export function ProductsPage() {
     }));
   }, [categories]);
 
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>(".c-home");
+    if (!root) {
+      return;
+    }
+
+    const revealItems = Array.from(root.querySelectorAll<HTMLElement>(".js-reveal"));
+    if (!revealItems.length) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+      revealItems.forEach((item) => {
+        item.classList.add("is-visible");
+      });
+      return;
+    }
+
+    revealItems.forEach((item, index) => {
+      const staggerDelay = `${(index % 6) * 70}ms`;
+      item.style.setProperty("--reveal-delay", staggerDelay);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.16,
+        rootMargin: "0px 0px -10% 0px"
+      }
+    );
+
+    revealItems.forEach((item) => {
+      observer.observe(item);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [products.length, topCategories.length]);
+
   const heroProduct = products[0];
   const promoProducts = products.slice(1, 5);
   const guideProducts = products.slice(5, 8);
@@ -250,7 +301,7 @@ export function ProductsPage() {
   return (
     <section className="panel c-home">
       <section
-        className="c-home-hero"
+        className="c-home-hero js-reveal c-home-full-bleed"
         style={{
           backgroundImage: `linear-gradient(115deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.25)), url(${imageOf(
             heroProduct,
@@ -271,14 +322,14 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="c-home-two-up">
+      <section className="c-home-two-up c-home-full-bleed">
         {[0, 1].map((index) => {
           const product = promoProducts[index];
 
           return (
             <article
               key={`upper-${index}`}
-              className="c-home-promo-card"
+              className="c-home-promo-card js-reveal"
               style={{
                 backgroundImage: `linear-gradient(150deg, rgba(0, 0, 0, 0.64), rgba(0, 0, 0, 0.34)), url(${imageOf(
                   product,
@@ -298,7 +349,7 @@ export function ProductsPage() {
         })}
       </section>
 
-      <section className="c-home-section">
+      <section className="c-home-section js-reveal">
         <h2 className="c-home-title">Mua theo danh mục</h2>
 
         <div className="c-home-category-grid">
@@ -310,7 +361,7 @@ export function ProductsPage() {
               <Link
                 key={`${category.id}-${category.name}`}
                 to={href}
-                className="c-home-category-card"
+                className="c-home-category-card js-reveal"
                 style={{
                   backgroundImage: `linear-gradient(155deg, rgba(15, 21, 30, 0.84), rgba(6, 10, 16, 0.9)), url(${categoryVisuals[index % categoryVisuals.length]})`
                 }}
@@ -323,14 +374,14 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="c-home-two-up c-home-two-up--second">
+      <section className="c-home-two-up c-home-two-up--second c-home-full-bleed">
         {[2, 3].map((index) => {
           const product = promoProducts[index];
 
           return (
             <article
               key={`lower-${index}`}
-              className="c-home-promo-card"
+              className="c-home-promo-card js-reveal"
               style={{
                 backgroundImage: `linear-gradient(150deg, rgba(0, 0, 0, 0.64), rgba(0, 0, 0, 0.34)), url(${imageOf(
                   product,
@@ -350,7 +401,7 @@ export function ProductsPage() {
         })}
       </section>
 
-      <section className="c-home-builder">
+      <section className="c-home-builder js-reveal">
         <h2 className="c-home-title">Tùy chỉnh bộ setup của bạn</h2>
         <p className="c-home-builder-sub">Bắt đầu từ một sản phẩm</p>
 
@@ -378,7 +429,7 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="c-home-benefits">
+      <section className="c-home-benefits js-reveal">
         <h2 className="c-home-title">Vì sao nên mua tại ShopPro</h2>
         <button type="button" className="c-home-btn-yellow" onClick={() => updateQuery({ page: 0 })}>
           Tìm hiểu thêm
@@ -386,7 +437,7 @@ export function ProductsPage() {
 
         <div className="c-home-benefit-grid">
           {serviceBenefits.map((item) => (
-            <article key={item}>
+            <article key={item} className="js-reveal">
               <span className="c-home-benefit-icon">◉</span>
               <p>{item}</p>
             </article>
@@ -394,7 +445,7 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="c-home-experience" id="experience-zone">
+      <section className="c-home-experience js-reveal" id="experience-zone">
         <h2 className="c-home-title">Trải nghiệm ShopPro</h2>
 
         <div className="c-home-experience-grid">
@@ -405,7 +456,7 @@ export function ProductsPage() {
             return (
               <article
                 key={`exp-${index}`}
-                className="c-home-experience-card"
+                className="c-home-experience-card js-reveal"
                 style={{
                   backgroundImage: `linear-gradient(150deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.35)), url(${imageOf(
                     product,
@@ -423,7 +474,7 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="c-home-guides" id="guide-zone">
+      <section className="c-home-guides js-reveal" id="guide-zone">
         <h2 className="c-home-title">Hướng dẫn và mẹo hay</h2>
         <Link to="/products" className="c-home-guide-link">
           Xem thêm bài viết ›
@@ -439,7 +490,7 @@ export function ProductsPage() {
             ][index];
 
             return (
-              <article key={`guide-${index}`} className="c-home-guide-card">
+              <article key={`guide-${index}`} className="c-home-guide-card js-reveal">
                 <img src={imageOf(product, categoryVisuals[(index + 2) % categoryVisuals.length])} alt={product?.name ?? fallbackHeadline} />
                 <div>
                   <small>BÀI VIẾT</small>
@@ -452,7 +503,7 @@ export function ProductsPage() {
         </div>
       </section>
 
-      <section className="c-home-catalog" id="offers-zone">
+      <section className="c-home-catalog js-reveal" id="offers-zone">
         <div className="c-home-catalog-head">
           <div>
             <p className="c-home-eyebrow">Ưu đãi nổi bật</p>
@@ -520,7 +571,7 @@ export function ProductsPage() {
           <>
             <div className="c-home-product-grid">
               {products.map((product) => (
-                <article key={product.id} className="c-home-product-card">
+                <article key={product.id} className="c-home-product-card js-reveal">
                   <div className="c-home-product-media">
                     <span className="c-home-promo-badge">-{getPromoPercent(product.id)}%</span>
                     <img src={imageOf(product, heroVisuals[product.id % heroVisuals.length])} alt={product.name} />

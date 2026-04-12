@@ -785,7 +785,7 @@ export function AdminDashboardPage() {
         setProductForm(productToForm(updated));
       }
     } catch (error) {
-      setProductMessage(toErrorMessage(error, "không th? luu sản phẩm."));
+      setProductMessage(toErrorMessage(error, "Khong the luu san pham."));
     } finally {
       setSavingProduct(false);
     }
@@ -1076,7 +1076,7 @@ export function AdminDashboardPage() {
             <strong>{activeProductsCount}</strong>
           </article>
           <article>
-            <span>?ang giảm giá</span>
+            <span>Dang giam gia</span>
             <strong>{discountedProductsCount}</strong>
           </article>
           <article>
@@ -1193,7 +1193,7 @@ export function AdminDashboardPage() {
               </label>
 
               <label className="is-wide">
-                <span>Link ?nh</span>
+                <span>Link anh</span>
                 <input
                   type="text"
                   value={productForm.image}
@@ -1221,7 +1221,7 @@ export function AdminDashboardPage() {
                     onChange={(event) => setSelectedUploadFile(event.target.files?.[0] ?? null)}
                   />
                   <button type="button" disabled={uploadingProductImage} onClick={() => void handleUploadProductImage()}>
-                    {uploadingProductImage ? "Dang upload..." : "Upload ?nh"}
+                    {uploadingProductImage ? "Dang upload..." : "Upload anh"}
                   </button>
                 </div>
               </label>
@@ -1327,7 +1327,7 @@ export function AdminDashboardPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>?nh</th>
+                    <th>Anh</th>
                     <th>sản phẩm</th>
                     <th>danh mục</th>
                     <th>thương hiệu</th>
@@ -1562,11 +1562,11 @@ export function AdminDashboardPage() {
             <strong>{users.length}</strong>
           </article>
           <article>
-            <span>S? Admin</span>
+            <span>So Admin</span>
             <strong>{adminCount}</strong>
           </article>
           <article>
-            <span>S? Staff</span>
+            <span>So Staff</span>
             <strong>{staffCount}</strong>
           </article>
           <article>

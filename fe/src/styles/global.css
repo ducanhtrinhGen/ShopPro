@@ -1289,9 +1289,7 @@ select {
   gap: 8px;
 }
 
-.corsair-action-button,
-.corsair-action-link,
-.corsair-signout {
+.corsair-action-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1341,28 +1339,15 @@ select {
   background: linear-gradient(135deg, #fff0a6, #ffd21a);
 }
 
-.corsair-action-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  border: 1px solid rgba(255, 210, 26, 0.35);
-  background: rgba(255, 210, 26, 0.12);
-  color: #ffeb92;
-  cursor: pointer;
-}
-
-.corsair-dashboard-menu {
+.corsair-account-menu {
   position: relative;
 }
 
-.corsair-dashboard-trigger.open {
-  border-color: #ffd21a;
-  background: rgba(255, 210, 26, 0.22);
-  color: #fff3bc;
+.corsair-account-trigger {
+  gap: 5px;
 }
 
-.corsair-dashboard-trigger span {
+.corsair-account-caret {
   font-size: 10px;
   line-height: 1;
 }
@@ -1380,6 +1365,15 @@ select {
   gap: 4px;
   box-shadow: 0 20px 34px rgba(0, 0, 0, 0.45);
   z-index: 20;
+}
+
+.corsair-account-panel::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
 }
 
 .corsair-dashboard-item {
@@ -1401,18 +1395,24 @@ select {
   color: #fff2bc;
 }
 
-.corsair-signout {
-  border: 1px solid #2c394b;
-  background: #0f1723;
-  color: #cfdaeb;
+.corsair-account-action {
+  width: 100%;
+  justify-content: flex-start;
+  font: inherit;
+  background: transparent;
   cursor: pointer;
 }
 
-.corsair-action-link:hover,
-.corsair-signout:hover,
 .corsair-action-button:hover,
 .corsair-icon-action:hover {
   transform: translateY(-1px);
+}
+
+.corsair-icon-action:focus-visible,
+.corsair-action-button:focus-visible,
+.corsair-dashboard-item:focus-visible {
+  outline: 2px solid #ffd21a;
+  outline-offset: 2px;
 }
 
 .corsair-link-inner {

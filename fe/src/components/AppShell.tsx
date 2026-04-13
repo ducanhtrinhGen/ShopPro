@@ -1,4 +1,13 @@
-﻿import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+﻿import {
+  type FocusEvent as ReactFocusEvent,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getCategories } from "../api/catalog";
 import { useAuth } from "../auth/AuthContext";
@@ -18,6 +27,16 @@ type IconProps = {
 type FooterColumn = {
   title: string;
   links: Array<{ label: string; href: string }>;
+};
+
+type AccountMenuAction = "logout";
+
+type AccountMenuItem = {
+  key: string;
+  label: string;
+  icon: ReactNode;
+  to?: string;
+  action?: AccountMenuAction;
 };
 
 const footerColumns: FooterColumn[] = [
@@ -178,15 +197,6 @@ function IconUser(props: IconProps) {
   );
 }
 
-function IconEye(props: IconProps) {
-  return (
-    <IconBase {...props}>
-      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
-      <circle cx="12" cy="12" r="2.4" />
-    </IconBase>
-  );
-}
-
 function IconArrowOut(props: IconProps) {
   return (
     <IconBase {...props}>
@@ -211,20 +221,179 @@ export function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const categoryMenuRef = useRef<HTMLElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const accountTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const accountCloseTimerRef = useRef<number | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isDashboardMenuOpen, setIsDashboardMenuOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [isPointerHoverCapable, setIsPointerHoverCapable] = useState(false);
 
   const isLoggedIn = Boolean(user);
   const isOwner = isOwnerUser(user);
   const isStorefrontRoute = location.pathname === "/" || location.pathname === "/products";
+  const accountMenuPanelId = "account-menu-panel";
+  const accountMenuTriggerId = "account-menu-trigger";
   const dashboardPath = getDefaultRouteForUser(user);
-  const showAdminLink = canAccessAdminArea(user);
+  const isAdminOrOwner = canAccessAdminArea(user);
   const showOpsLink = isOwnerOrStaffUser(user) && !isOwner;
   const showCustomerLinks = isCustomerUser(user);
+  const clearAccountCloseTimer = () => {
+    if (accountCloseTimerRef.current !== null) {
+      window.clearTimeout(accountCloseTimerRef.current);
+      accountCloseTimerRef.current = null;
+    }
+  };
+
+  const closeAccountMenu = () => {
+    clearAccountCloseTimer();
+    setIsAccountMenuOpen(false);
+  };
+
+  const handleAccountMenuMouseEnter = () => {
+    if (!isPointerHoverCapable) {
+      return;
+    }
+    clearAccountCloseTimer();
+    setIsAccountMenuOpen(true);
+  };
+
+  const handleAccountMenuMouseLeave = () => {
+    if (!isPointerHoverCapable) {
+      return;
+    }
+    clearAccountCloseTimer();
+    accountCloseTimerRef.current = window.setTimeout(() => {
+      setIsAccountMenuOpen(false);
+      accountCloseTimerRef.current = null;
+    }, 130);
+  };
+
+  const handleAccountTriggerClick = () => {
+    clearAccountCloseTimer();
+    setIsAccountMenuOpen((prev) => !prev);
+    setIsCategoryOpen(false);
+    setIsSearchOpen(false);
+  };
+
+  const focusFirstAccountMenuItem = () => {
+    if (!accountMenuRef.current) {
+      return;
+    }
+    const firstItem = accountMenuRef.current.querySelector<HTMLElement>("[data-account-menu-item='true']");
+    firstItem?.focus();
+  };
+
+  const handleAccountTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      clearAccountCloseTimer();
+      setIsAccountMenuOpen(true);
+      setIsCategoryOpen(false);
+      setIsSearchOpen(false);
+      window.setTimeout(focusFirstAccountMenuItem, 0);
+      return;
+    }
+
+    if (event.key === "Escape" && isAccountMenuOpen) {
+      event.preventDefault();
+      closeAccountMenu();
+      accountTriggerRef.current?.focus();
+    }
+  };
+
+  const handleAccountMenuBlur = (event: ReactFocusEvent<HTMLDivElement>) => {
+    const nextFocused = event.relatedTarget as Node | null;
+    if (!nextFocused || !event.currentTarget.contains(nextFocused)) {
+      closeAccountMenu();
+    }
+  };
+
+  const handleAccountMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeAccountMenu();
+      accountTriggerRef.current?.focus();
+    }
+  };
+
+  const accountMenuItems = useMemo<AccountMenuItem[]>(() => {
+    if (!isLoggedIn) {
+      return [
+        {
+          key: "login",
+          label: "Đăng nhập",
+          to: "/login",
+          icon: <IconArrowOut className="corsair-icon" />
+        },
+        {
+          key: "register",
+          label: "Đăng ký",
+          to: "/register",
+          icon: <IconUser className="corsair-icon" />
+        }
+      ];
+    }
+
+    const items: AccountMenuItem[] = [
+      {
+        key: "account-info",
+        label: "Thông tin tài khoản",
+        to: "/customer",
+        icon: <IconUser className="corsair-icon" />
+      },
+      {
+        key: "my-orders",
+        label: "Đơn hàng của tôi",
+        to: "/cart",
+        icon: <IconCart className="corsair-icon" />
+      }
+    ];
+
+    if (isAdminOrOwner) {
+      items.push(
+        {
+          key: "manage-products",
+          label: "Quản lý sản phẩm",
+          to: "/admin?view=products",
+          icon: <IconBox className="corsair-icon" />
+        },
+        {
+          key: "manage-users",
+          label: "Quản lý người dùng",
+          to: "/admin?view=users",
+          icon: <IconShield className="corsair-icon" />
+        },
+        {
+          key: "dashboard-home",
+          label: "Trang điều khiển chính",
+          to: dashboardPath,
+          icon: <IconGauge className="corsair-icon" />
+        }
+      );
+
+      if (dashboardPath !== "/admin") {
+        items.push({
+          key: "admin-system",
+          label: "Quản trị hệ thống",
+          to: "/admin",
+          icon: <IconShield className="corsair-icon" />
+        });
+      }
+    }
+
+    items.push({
+      key: "logout",
+      label: "Đăng xuất",
+      icon: <IconArrowOut className="corsair-icon" />,
+      action: "logout"
+    });
+
+    return items;
+  }, [dashboardPath, isAdminOrOwner, isLoggedIn]);
 
   const navClassName = ({ isActive }: { isActive: boolean }) =>
     isActive ? "corsair-menu-link active" : "corsair-menu-link";
@@ -244,14 +413,9 @@ export function AppShell() {
     return query ? `/products?${query}` : "/products";
   };
 
-  const handleAuthAction = async () => {
-    if (isLoggedIn) {
-      await logout();
-      navigate("/", { replace: true });
-      return;
-    }
-
-    navigate("/login");
+  const handleLogout = async () => {
+    await logout();
+    navigate("/", { replace: true });
   };
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -291,6 +455,29 @@ export function AppShell() {
   }, [location.search]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const syncHoverCapability = () => setIsPointerHoverCapable(mediaQuery.matches);
+    syncHoverCapability();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncHoverCapability);
+      return () => mediaQuery.removeEventListener("change", syncHoverCapability);
+    }
+
+    mediaQuery.addListener(syncHoverCapability);
+    return () => mediaQuery.removeListener(syncHoverCapability);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (accountCloseTimerRef.current !== null) {
+        window.clearTimeout(accountCloseTimerRef.current);
+        accountCloseTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!categoryMenuRef.current) {
         return;
@@ -298,7 +485,11 @@ export function AppShell() {
 
       if (!categoryMenuRef.current.contains(event.target as Node)) {
         setIsCategoryOpen(false);
-        setIsDashboardMenuOpen(false);
+        if (accountCloseTimerRef.current !== null) {
+          window.clearTimeout(accountCloseTimerRef.current);
+          accountCloseTimerRef.current = null;
+        }
+        setIsAccountMenuOpen(false);
         setIsSearchOpen(false);
       }
     };
@@ -306,7 +497,11 @@ export function AppShell() {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsCategoryOpen(false);
-        setIsDashboardMenuOpen(false);
+        if (accountCloseTimerRef.current !== null) {
+          window.clearTimeout(accountCloseTimerRef.current);
+          accountCloseTimerRef.current = null;
+        }
+        setIsAccountMenuOpen(false);
         setIsSearchOpen(false);
       }
     };
@@ -322,7 +517,11 @@ export function AppShell() {
 
   useEffect(() => {
     setIsCategoryOpen(false);
-    setIsDashboardMenuOpen(false);
+    if (accountCloseTimerRef.current !== null) {
+      window.clearTimeout(accountCloseTimerRef.current);
+      accountCloseTimerRef.current = null;
+    }
+    setIsAccountMenuOpen(false);
     setIsSearchOpen(false);
   }, [location.pathname, location.search]);
 
@@ -416,7 +615,7 @@ export function AppShell() {
                 onClick={() => {
                   setIsSearchOpen((prev) => !prev);
                   setIsCategoryOpen(false);
-                  setIsDashboardMenuOpen(false);
+                  closeAccountMenu();
                 }}
                 aria-expanded={isSearchOpen}
                 aria-label="Mở tìm kiếm"
@@ -429,7 +628,7 @@ export function AppShell() {
                 className={`corsair-action-button${isCategoryOpen ? " open" : ""}`}
                 onClick={() => {
                   setIsCategoryOpen((prev) => !prev);
-                  setIsDashboardMenuOpen(false);
+                  closeAccountMenu();
                 }}
                 aria-expanded={isCategoryOpen}
               >
@@ -439,80 +638,76 @@ export function AppShell() {
                 </span>
               </button>
 
-              {isLoggedIn ? (
-                <div className={`corsair-dashboard-menu${isDashboardMenuOpen ? " open" : ""}`}>
-                  <button
-                    type="button"
-                    className={`corsair-action-link corsair-dashboard-trigger${isDashboardMenuOpen ? " open" : ""}`}
-                    onClick={() => {
-                      setIsDashboardMenuOpen((prev) => !prev);
-                      setIsCategoryOpen(false);
-                    }}
-                    aria-expanded={isDashboardMenuOpen}
-                    aria-haspopup="menu"
-                  >
-                    <IconGauge className="corsair-icon" />
-                    Bảng điều khiển
-                    <span aria-hidden="true">{isDashboardMenuOpen ? "▲" : "▼"}</span>
-                  </button>
-
-                  {isDashboardMenuOpen ? (
-                    <div className="corsair-dashboard-panel" role="menu" aria-label="Bảng điều khiển">
-                      <Link to={dashboardPath} className="corsair-dashboard-item" role="menuitem">
-                        <span className="corsair-link-inner">
-                          <IconGauge className="corsair-icon" />
-                          Trang điều khiển chính
-                        </span>
-                      </Link>
-                      {showAdminLink ? (
-                        <Link to="/admin" className="corsair-dashboard-item" role="menuitem">
-                          <span className="corsair-link-inner">
-                            <IconShield className="corsair-icon" />
-                            Quản trị hệ thống
-                          </span>
-                        </Link>
-                      ) : null}
-                      {isOwnerOrStaffUser(user) ? (
-                        <Link to="/owner-staff" className="corsair-dashboard-item" role="menuitem">
-                          <span className="corsair-link-inner">
-                            <IconTeam className="corsair-icon" />
-                            Chủ shop / Nhân viên
-                          </span>
-                        </Link>
-                      ) : null}
-                      {showCustomerLinks ? (
-                        <Link to="/customer" className="corsair-dashboard-item" role="menuitem">
-                          <span className="corsair-link-inner">
-                            <IconUser className="corsair-icon" />
-                            Khách hàng
-                          </span>
-                        </Link>
-                      ) : null}
-                      {showCustomerLinks ? (
-                        <Link to="/cart" className="corsair-dashboard-item" role="menuitem">
-                          <span className="corsair-link-inner">
-                            <IconCart className="corsair-icon" />
-                            Giỏ hàng
-                          </span>
-                        </Link>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <Link to="/products" className="corsair-action-link">
-                  <span className="corsair-link-inner">
-                    <IconEye className="corsair-icon" />
-                    Xem sản phẩm
+              <div
+                className={`corsair-account-menu${isAccountMenuOpen ? " open" : ""}`}
+                onMouseEnter={handleAccountMenuMouseEnter}
+                onMouseLeave={handleAccountMenuMouseLeave}
+                onBlur={handleAccountMenuBlur}
+                ref={accountMenuRef}
+              >
+                <button
+                  type="button"
+                  id={accountMenuTriggerId}
+                  ref={accountTriggerRef}
+                  className={`corsair-icon-action corsair-account-trigger${isAccountMenuOpen ? " open" : ""}`}
+                  onClick={handleAccountTriggerClick}
+                  onKeyDown={handleAccountTriggerKeyDown}
+                  aria-expanded={isAccountMenuOpen}
+                  aria-haspopup="true"
+                  aria-controls={accountMenuPanelId}
+                  aria-label={isLoggedIn ? "Mở menu tài khoản" : "Mở menu đăng nhập"}
+                >
+                  <IconUser className="corsair-icon" />
+                  <span className="corsair-account-caret" aria-hidden="true">
+                    {isAccountMenuOpen ? "▲" : "▼"}
                   </span>
-                </Link>
-              )}
-              <button type="button" className="corsair-signout" onClick={handleAuthAction}>
-                <span className="corsair-link-inner">
-                  <IconArrowOut className="corsair-icon" />
-                  {isLoggedIn ? "Đăng xuất" : "Đăng nhập"}
-                </span>
-              </button>
+                </button>
+
+                {isAccountMenuOpen ? (
+                  <div
+                    id={accountMenuPanelId}
+                    className="corsair-dashboard-panel corsair-account-panel"
+                    aria-label="Tài khoản"
+                    aria-labelledby={accountMenuTriggerId}
+                    onKeyDown={handleAccountMenuKeyDown}
+                  >
+                    {accountMenuItems.map((item) =>
+                      item.to ? (
+                        <Link
+                          key={item.key}
+                          to={item.to}
+                          className="corsair-dashboard-item"
+                          data-account-menu-item="true"
+                          onClick={closeAccountMenu}
+                        >
+                          <span className="corsair-link-inner">
+                            {item.icon}
+                            {item.label}
+                          </span>
+                        </Link>
+                      ) : (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className="corsair-dashboard-item corsair-account-action"
+                          data-account-menu-item="true"
+                          onClick={() => {
+                            closeAccountMenu();
+                            if (item.action === "logout") {
+                              void handleLogout();
+                            }
+                          }}
+                        >
+                          <span className="corsair-link-inner">
+                            {item.icon}
+                            {item.label}
+                          </span>
+                        </button>
+                      )
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 

@@ -14,7 +14,9 @@
             <p class="text-uppercase text-warning fw-semibold mb-1 small">Spring MVC + Thymeleaf</p>
             <h1 class="display-6 fw-bold mb-0">ShopPro Dashboard</h1>
         </div>
-        <a class="btn btn-outline-light" href="http://127.0.0.1:5173">Open React Frontend</a>
+        <a class="btn btn-outline-light"
+           th:href="${@environment.getProperty('app.frontend-url', 'http://localhost:5173')}"
+           href="http://localhost:5173">Open React Frontend</a>
     </header>
 
     <section class="row g-3 mb-4">

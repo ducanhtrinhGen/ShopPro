@@ -20,11 +20,20 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    /**
+     * Deployed frontend origin(s), e.g. "https://shoppro.id.vn".
+     * Supports comma-separated list for preview/staging domains.
+     */
+    @org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:}")
+    private String frontendUrl;
 
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(AccountService accountService,
@@ -68,7 +77,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        config.setAllowedOriginPatterns(buildAllowedOriginPatterns());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -78,5 +87,31 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/**", config);
         source.registerCorsConfiguration("/products/image/**", config);
         return source;
+    }
+
+    private List<String> buildAllowedOriginPatterns() {
+        List<String> base = List.of("http://localhost:*", "http://127.0.0.1:*");
+
+        String raw = frontendUrl == null ? "" : frontendUrl.trim();
+        if (raw.isEmpty()) {
+            return base;
+        }
+
+        List<String> configured = Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .collect(Collectors.toList());
+
+        if (configured.isEmpty()) {
+            return base;
+        }
+
+        // Allow configured origins + keep local development origins.
+        return Arrays.asList(
+                configured.toArray(new String[0])
+        ).stream().collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
+            list.addAll(base);
+            return list;
+        }));
     }
 }

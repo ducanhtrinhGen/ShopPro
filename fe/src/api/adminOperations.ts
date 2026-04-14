@@ -1,4 +1,4 @@
-import { ApiRequestError, apiRequest } from "./client";
+import { ApiRequestError, apiRequest, withApiBaseUrl } from "./client";
 import type {
   AdminDataIssue,
   AdminBrandItem,
@@ -135,7 +135,7 @@ export async function uploadAdminCloudinaryImage(file: File, options: Cloudinary
     formData.append("productId", String(options.productId));
   }
 
-  const response = await fetch("/api/admin/cloudinary/upload", {
+  const response = await fetch(withApiBaseUrl("/api/admin/cloudinary/upload"), {
     method: "POST",
     credentials: "include",
     body: formData

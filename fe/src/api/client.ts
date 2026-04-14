@@ -12,6 +12,38 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
 
+function readApiBaseUrl(): string {
+  const raw = (import.meta.env.VITE_API_URL ?? "").trim();
+  if (!raw) {
+    return "";
+  }
+  return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+}
+
+const API_BASE_URL = readApiBaseUrl();
+
+export function withApiBaseUrl(path: string): string {
+  if (!path) {
+    return path;
+  }
+
+  // Don't touch absolute URLs (e.g. Cloudinary links, external resources).
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  if (!API_BASE_URL) {
+    // Local dev: rely on Vite proxy / same-origin.
+    return path;
+  }
+
+  if (!path.startsWith("/")) {
+    return `${API_BASE_URL}/${path}`;
+  }
+
+  return `${API_BASE_URL}${path}`;
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const hasBody = options.body !== undefined;
   const headers = new Headers(options.headers ?? {});
@@ -20,7 +52,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(withApiBaseUrl(path), {
     method: options.method ?? "GET",
     credentials: "include",
     headers,

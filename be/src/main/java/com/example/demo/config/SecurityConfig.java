@@ -15,10 +15,13 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +64,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/categories").permitAll()
                         .requestMatchers("/products/image/**").permitAll()
+                        .requestMatchers("/mvc/login", "/mvc/perform_login").permitAll()
+                        .requestMatchers("/mvc/**").hasAnyRole("OWNER", "ADMIN")
                         .requestMatchers("/api/owner/**").hasRole("OWNER")
                         .requestMatchers("/api/admin/**").hasAnyRole("OWNER", "ADMIN")
                         .requestMatchers("/api/**").authenticated()
@@ -68,7 +73,27 @@ public class SecurityConfig {
                 .exceptionHandling((exception) -> exception
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
-                                new AntPathRequestMatcher("/api/**")))
+                                new AntPathRequestMatcher("/api/**"))
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/mvc/login"),
+                                new AntPathRequestMatcher("/mvc/**"))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            String uri = request.getRequestURI();
+                            String context = request.getContextPath();
+                            if (uri != null && context != null && uri.startsWith(context + "/mvc")
+                                    && !uri.startsWith(context + "/mvc/login")) {
+                                response.sendRedirect(context + "/mvc/login?forbidden");
+                                return;
+                            }
+                            if (!response.isCommitted()) {
+                                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                            }
+                        }))
+                .formLogin(form -> form
+                        .loginPage("/mvc/login")
+                        .loginProcessingUrl("/mvc/perform_login")
+                        .defaultSuccessUrl("/mvc/dashboard", true)
+                        .permitAll())
                 .csrf(AbstractHttpConfigurer::disable);
 
         return http.build();

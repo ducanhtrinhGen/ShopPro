@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopPro — MVC sign in</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/mvc.css}">
+</head>
+<body>
+<main class="container py-5" style="max-width: 420px;">
+    <h1 class="h4 mb-4 fw-bold">ShopPro legacy dashboard</h1>
+    <p class="text-secondary small mb-4">Sign in with an <strong>Owner</strong> or <strong>Admin</strong> account to view internal stats.</p>
+
+    <div th:if="${param.forbidden}" class="alert alert-warning small" role="alert">
+        This account does not have access to the MVC dashboard (Owner or Admin only).
+    </div>
+    <div th:if="${param.error}" class="alert alert-danger small" role="alert">
+        Invalid credentials, or this account is not allowed to access the MVC dashboard.
+    </div>
+    <div th:if="${param.logout}" class="alert alert-success small" role="alert">
+        You have been signed out.
+    </div>
+
+    <form th:action="@{/mvc/perform_login}" method="post" class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <label class="form-label" for="username">Username</label>
+                <input class="form-control" id="username" name="username" type="text" autocomplete="username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-warning w-100 fw-semibold">Sign in</button>
+        </div>
+    </form>
+
+    <p class="mt-4 small text-secondary">
+        <a th:href="${@environment.getProperty('app.frontend-url', 'http://localhost:5173')}">Back to React storefront</a>
+    </p>
+</main>
+</body>
+</html>

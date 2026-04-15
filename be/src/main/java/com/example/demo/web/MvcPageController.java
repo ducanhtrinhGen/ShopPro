@@ -57,6 +57,11 @@ public class MvcPageController {
         return "redirect:/mvc/dashboard";
     }
 
+    @GetMapping("/login")
+    public String loginPage() {
+        return "mvc/login";
+    }
+
     @GetMapping("/dashboard")
     @Transactional(readOnly = true)
     public String dashboard(Model model) {

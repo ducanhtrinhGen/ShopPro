@@ -36,7 +36,12 @@ public class OrderApiController {
                     .body(new ApiError("Order not found."));
         }
 
-        if (order.getAccount() != null && !authentication.getName().equals(order.getAccount().getLogin_name())) {
+        if (order.getAccount() == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiError("You do not have permission to view this order."));
+        }
+
+        if (!authentication.getName().equals(order.getAccount().getLogin_name())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiError("You do not have permission to view this order."));
         }

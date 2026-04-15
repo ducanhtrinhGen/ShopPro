@@ -95,7 +95,7 @@ function toSalesChannel(index: number) {
   return "Tiếp thị";
 }
 
-export function OwnerStaffDashboardPage() {
+export function OwnerExecutivePage() {
   const { user } = useAuth();
   const isOwner = isOwnerUser(user);
 

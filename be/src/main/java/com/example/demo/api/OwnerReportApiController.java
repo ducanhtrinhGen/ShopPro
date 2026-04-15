@@ -85,10 +85,10 @@ public class OwnerReportApiController {
     }
 
     private String resolveCustomerUsername(Order order) {
-        if (order.getAccount() == null || order.getAccount().getLogin_name() == null || order.getAccount().getLogin_name().isBlank()) {
+        if (order.getAccount() == null || order.getAccount().getLoginName() == null || order.getAccount().getLoginName().isBlank()) {
             return "guest";
         }
-        return order.getAccount().getLogin_name();
+        return order.getAccount().getLoginName();
     }
 
     private boolean isCompletedStatus(Order order) {

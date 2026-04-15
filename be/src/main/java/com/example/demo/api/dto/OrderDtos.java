@@ -16,9 +16,23 @@ public final class OrderDtos {
             long subtotal) {
     }
 
+    public record OrderSummaryResponse(
+            int id,
+            LocalDateTime createdAt,
+            String status,
+            long totalAmount,
+            int totalQuantity) {
+    }
+
     public record OrderResponse(
             int id,
             LocalDateTime createdAt,
+            String status,
+            String paymentMethod,
+            String receiverName,
+            String phone,
+            String address,
+            String email,
             long totalAmount,
             int totalQuantity,
             List<OrderDetailResponse> details) {

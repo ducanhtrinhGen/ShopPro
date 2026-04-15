@@ -67,7 +67,7 @@ public class AuthApiController {
         try {
             Account created = accountService.createUserAccount(request.username(), request.password());
             Authentication authentication = authenticateAndStoreSession(
-                    created.getLogin_name(),
+                    created.getLoginName(),
                     request.password(),
                     httpRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(toAuthResponse(authentication));

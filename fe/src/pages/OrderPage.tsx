@@ -15,6 +15,21 @@ export function OrderPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizeStatus = (status: string | null | undefined) => (status ?? "").trim().toUpperCase();
+  const toStatusLabel = (status: string | null | undefined) => {
+    const normalized = normalizeStatus(status);
+    if (normalized === "PENDING") return "Chờ xử lý";
+    if (normalized === "CONFIRMED") return "Đã xác nhận";
+    if (normalized === "PROCESSING") return "Đang xử lý";
+    if (normalized === "SHIPPING") return "Đang giao";
+    if (normalized === "DELIVERED") return "Đã giao";
+    if (normalized === "COMPLETED") return "Hoàn tất";
+    if (normalized === "CANCELLED") return "Đã hủy";
+    if (normalized === "FAILED") return "Thất bại";
+    if (normalized === "REFUNDED") return "Hoàn tiền";
+    return status || "Không rõ";
+  };
+
   useEffect(() => {
     const loadOrder = async () => {
       setIsLoading(true);
@@ -70,6 +85,25 @@ export function OrderPage() {
             <p>
               Thời gian tạo: <strong>{new Date(order.createdAt).toLocaleString()}</strong>
             </p>
+            <p>
+              Trạng thái: <strong>{toStatusLabel(order.status)}</strong>
+            </p>
+            <p>
+              Thanh toán: <strong>{order.paymentMethod ?? "COD"}</strong>
+            </p>
+          </div>
+
+          <div className="summary-box" style={{ marginBottom: "1rem" }}>
+            <h3>Thông tin nhận hàng</h3>
+            <p>
+              Người nhận: <strong>{order.receiverName ?? "Chưa cập nhật"}</strong>
+            </p>
+            <p>
+              SĐT: <strong>{order.phone ?? "Chưa cập nhật"}</strong>
+            </p>
+            <p>
+              Địa chỉ: <strong>{order.address ?? "Chưa cập nhật"}</strong>
+            </p>
           </div>
 
           <div className="order-list">
@@ -90,6 +124,14 @@ export function OrderPage() {
             <p>
               Tổng đơn hàng: <strong>{moneyFormatter.format(order.totalAmount)}</strong>
             </p>
+            <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+              <Link to="/orders" className="primary-link">
+                Danh sách đơn
+              </Link>
+              <Link to="/profile" className="primary-link">
+                Cập nhật hồ sơ
+              </Link>
+            </div>
           </footer>
         </>
       ) : null}

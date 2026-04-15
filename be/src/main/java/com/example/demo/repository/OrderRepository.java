@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findTop10ByOrderByCreatedAtDesc();
+
+    List<Order> findByAccount_LoginNameOrderByCreatedAtDesc(String loginName);
 }

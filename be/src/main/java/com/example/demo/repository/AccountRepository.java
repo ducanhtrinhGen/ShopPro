@@ -11,8 +11,8 @@ import java.util.Optional;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
 
-    @Query("SELECT a FROM Account a WHERE a.login_name = :login_name")
-    Optional<Account> findByLoginName(@Param("login_name") String login_name);
+    @Query("SELECT a FROM Account a WHERE a.loginName = :loginName")
+    Optional<Account> findByLoginName(@Param("loginName") String loginName);
 
     Optional<Account> findByEmail(String email);
 }

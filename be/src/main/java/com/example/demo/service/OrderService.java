@@ -49,7 +49,7 @@ public class OrderService {
         if (account != null) {
             order.setReceiverName(account.getFullName() != null && !account.getFullName().isBlank()
                     ? account.getFullName()
-                    : account.getLogin_name());
+                    : account.getLoginName());
             order.setPhone(account.getPhone());
             order.setAddress(account.getAddress());
             order.setEmail(account.getEmail());

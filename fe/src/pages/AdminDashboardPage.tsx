@@ -928,7 +928,7 @@ export function AdminDashboardPage() {
             <h2>Nhiem vu quan tri</h2>
             <div className="owner-crm-toolbar">
               <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to="/owner-staff">Sang bang dieu khien Staff</Link>
+              <Link to="/staff">Sang bang dieu khien Staff</Link>
             </div>
           </div>
 
@@ -1768,7 +1768,7 @@ export function AdminDashboardPage() {
 
           <div className="owner-crm-sidebar-actions">
             <Link to="/products">Mở trang sản phẩm</Link>
-            <Link to="/owner-staff">Bảng điều khiển Staff</Link>
+            <Link to="/staff">Bảng điều khiển Staff</Link>
           </div>
         </aside>
 
@@ -1802,7 +1802,7 @@ export function AdminDashboardPage() {
 
             <div className="owner-crm-header-actions">
               <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to="/owner-staff">Sang bang dieu khien Staff</Link>
+              <Link to="/staff">Sang bang dieu khien Staff</Link>
             </div>
           </header>
 

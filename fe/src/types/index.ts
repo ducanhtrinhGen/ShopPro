@@ -56,6 +56,14 @@ export type CheckoutResponse = {
   orderId: number;
 };
 
+export type CustomerOrderSummary = {
+  id: number;
+  createdAt: string;
+  status: string;
+  totalAmount: number;
+  totalQuantity: number;
+};
+
 export type OrderDetail = {
   productId: number;
   productName: string;
@@ -67,9 +75,23 @@ export type OrderDetail = {
 export type OrderResponse = {
   id: number;
   createdAt: string;
+  status: string;
+  paymentMethod: string | null;
+  receiverName: string | null;
+  phone: string | null;
+  address: string | null;
+  email: string | null;
   totalAmount: number;
   totalQuantity: number;
   details: OrderDetail[];
+};
+
+export type CustomerProfile = {
+  username: string;
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
 };
 
 export type OwnerRecentOrder = {

@@ -15,8 +15,8 @@ import {
   canAccessAdminArea,
   getDefaultRouteForUser,
   isCustomerUser,
-  isOwnerOrStaffUser,
-  isOwnerUser
+  isOwnerUser,
+  isStaffUser
 } from "../auth/roleUtils";
 import type { Category } from "../types";
 
@@ -239,7 +239,8 @@ export function AppShell() {
   const accountMenuTriggerId = "account-menu-trigger";
   const dashboardPath = getDefaultRouteForUser(user);
   const isAdminOrOwner = canAccessAdminArea(user);
-  const showOpsLink = isOwnerOrStaffUser(user) && !isOwner;
+  const showStaffNav = isStaffUser(user);
+  const showOwnerExecutiveNav = isOwnerUser(user);
   const showCustomerLinks = isCustomerUser(user);
   const clearAccountCloseTimer = () => {
     if (accountCloseTimerRef.current !== null) {
@@ -338,20 +339,33 @@ export function AppShell() {
       ];
     }
 
-    const items: AccountMenuItem[] = [
-      {
-        key: "account-info",
-        label: "Thông tin tài khoản",
-        to: "/customer",
-        icon: <IconUser className="corsair-icon" />
-      },
-      {
-        key: "my-orders",
-        label: "Đơn hàng của tôi",
-        to: "/cart",
-        icon: <IconCart className="corsair-icon" />
-      }
-    ];
+    const items: AccountMenuItem[] = [];
+
+    if (showCustomerLinks) {
+      items.push(
+        {
+          key: "account-info",
+          label: "Thông tin tài khoản",
+          to: "/profile",
+          icon: <IconUser className="corsair-icon" />
+        },
+        {
+          key: "my-orders",
+          label: "Đơn hàng của tôi",
+          to: "/orders",
+          icon: <IconCart className="corsair-icon" />
+        }
+      );
+    }
+
+    if (showStaffNav) {
+      items.push({
+        key: "staff-ops",
+        label: "Khu vực vận hành (Staff)",
+        to: "/staff",
+        icon: <IconTeam className="corsair-icon" />
+      });
+    }
 
     if (isAdminOrOwner) {
       items.push(
@@ -362,12 +376,6 @@ export function AppShell() {
           icon: <IconBox className="corsair-icon" />
         },
         {
-          key: "manage-users",
-          label: "Quản lý người dùng",
-          to: "/admin?view=users",
-          icon: <IconShield className="corsair-icon" />
-        },
-        {
           key: "dashboard-home",
           label: "Trang điều khiển chính",
           to: dashboardPath,
@@ -375,13 +383,21 @@ export function AppShell() {
         }
       );
 
-      if (dashboardPath !== "/admin") {
-        items.push({
-          key: "admin-system",
-          label: "Quản trị hệ thống",
-          to: "/admin",
-          icon: <IconShield className="corsair-icon" />
-        });
+      if (isOwner) {
+        items.push(
+          {
+            key: "manage-users",
+            label: "Quản lý người dùng",
+            to: "/admin?view=users",
+            icon: <IconShield className="corsair-icon" />
+          },
+          {
+            key: "owner-executive",
+            label: "Tong quan (Owner)",
+            to: "/owner",
+            icon: <IconGauge className="corsair-icon" />
+          }
+        );
       }
     }
 
@@ -393,7 +409,7 @@ export function AppShell() {
     });
 
     return items;
-  }, [dashboardPath, isAdminOrOwner, isLoggedIn]);
+  }, [dashboardPath, isAdminOrOwner, isLoggedIn, isOwner, showCustomerLinks, showStaffNav]);
 
   const navClassName = ({ isActive }: { isActive: boolean }) =>
     isActive ? "corsair-menu-link active" : "corsair-menu-link";
@@ -582,11 +598,27 @@ export function AppShell() {
                   Sản phẩm
                 </span>
               </NavLink>
-              {showOpsLink ? (
-                <NavLink to="/owner-staff" className={navClassName}>
+              {showOwnerExecutiveNav ? (
+                <NavLink to="/owner" className={navClassName}>
+                  <span className="corsair-link-inner">
+                    <IconGauge className="corsair-icon" />
+                    Dieu hanh
+                  </span>
+                </NavLink>
+              ) : null}
+              {showStaffNav ? (
+                <NavLink to="/staff" className={navClassName}>
                   <span className="corsair-link-inner">
                     <IconTeam className="corsair-icon" />
-                    Chủ shop / Nhân viên
+                    Van hanh
+                  </span>
+                </NavLink>
+              ) : null}
+              {isAdminOrOwner ? (
+                <NavLink to="/admin" className={navClassName}>
+                  <span className="corsair-link-inner">
+                    <IconShield className="corsair-icon" />
+                    Quan tri
                   </span>
                 </NavLink>
               ) : null}

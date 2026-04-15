@@ -99,7 +99,7 @@ public class MvcPageController {
 
         return new AccountSummary(
                 account.getId(),
-                account.getLogin_name(),
+                account.getLoginName(),
                 account.getFullName(),
                 account.getEmail(),
                 roleName,

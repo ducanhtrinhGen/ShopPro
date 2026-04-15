@@ -1,14 +1,18 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
+import { LegacyHubRedirect } from "./components/LegacyHubRedirect";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { CartPage } from "./pages/CartPage";
 import { CustomerDashboardPage } from "./pages/CustomerDashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { OrderPage } from "./pages/OrderPage";
-import { OwnerStaffDashboardPage } from "./pages/OwnerStaffDashboardPage";
+import { OwnerExecutivePage } from "./pages/OwnerExecutivePage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { StaffDashboardPage } from "./pages/StaffDashboardPage";
+import { MyOrdersPage } from "./pages/MyOrdersPage";
+import { ProfilePage } from "./pages/ProfilePage";
 
 export function App() {
   return (
@@ -20,17 +24,27 @@ export function App() {
         <Route path="/" element={<ProductsPage />} />
         <Route path="/products" element={<ProductsPage />} />
 
+        <Route path="/owner-staff" element={<LegacyHubRedirect />} />
+
         <Route element={<ProtectedRoute />}>
-          <Route path="/customer" element={<CustomerDashboardPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/orders/:id" element={<OrderPage />} />
+          <Route element={<ProtectedRoute allowedRoles={["ROLE_CUSTOMER", "ROLE_USER"]} />}>
+            <Route path="/customer" element={<CustomerDashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/orders" element={<MyOrdersPage />} />
+            <Route path="/orders/:id" element={<OrderPage />} />
+          </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["ROLE_OWNER", "ROLE_ADMIN"]} />}>
             <Route path="/admin" element={<AdminDashboardPage />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={["ROLE_OWNER", "ROLE_STAFF"]} />}>
-            <Route path="/owner-staff" element={<OwnerStaffDashboardPage />} />
+          <Route element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]} />}>
+            <Route path="/owner" element={<OwnerExecutivePage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={["ROLE_STAFF"]} />}>
+            <Route path="/staff" element={<StaffDashboardPage />} />
           </Route>
         </Route>
       </Route>

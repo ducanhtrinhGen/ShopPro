@@ -758,10 +758,10 @@ public class AdminOperationsApiController {
     }
 
     private String resolveCustomerUsername(Order order) {
-        if (order.getAccount() == null || isBlank(order.getAccount().getLogin_name())) {
+        if (order.getAccount() == null || isBlank(order.getAccount().getLoginName())) {
             return "guest";
         }
-        return order.getAccount().getLogin_name();
+        return order.getAccount().getLoginName();
     }
 
     private String toSlug(String raw) {

@@ -53,7 +53,7 @@ public class AccountService implements UserDetailsService {
                 .collect(Collectors.toSet());
 
         return new User(
-                account.getLogin_name(),
+                account.getLoginName(),
                 account.getPassword(),
                 true,
                 true,
@@ -86,7 +86,7 @@ public class AccountService implements UserDetailsService {
                 .orElseThrow(() -> new IllegalStateException("Khong tim thay role mac dinh cho customer."));
 
         Account account = new Account();
-        account.setLogin_name(normalizedLoginName);
+        account.setLoginName(normalizedLoginName);
         account.setFullName(normalizedLoginName);
         account.setPassword(passwordEncoder.encode(normalizedPassword));
         account.setLocked(false);
@@ -157,7 +157,7 @@ public class AccountService implements UserDetailsService {
         Role targetRole = resolveTargetRole(normalizedRole);
 
         Account account = new Account();
-        account.setLogin_name(normalizedLoginName);
+        account.setLoginName(normalizedLoginName);
         account.setFullName(normalizedLoginName);
         account.setPassword(passwordEncoder.encode(normalizedPassword));
         account.setLocked(false);
@@ -233,7 +233,7 @@ public class AccountService implements UserDetailsService {
         if (actingUsername == null || actingUsername.trim().isEmpty()) {
             return false;
         }
-        return targetAccount.getLogin_name().equalsIgnoreCase(actingUsername.trim());
+        return targetAccount.getLoginName().equalsIgnoreCase(actingUsername.trim());
     }
 
     private void ensureCanManageTargetAccount(Account targetAccount, Account actingAccount) {

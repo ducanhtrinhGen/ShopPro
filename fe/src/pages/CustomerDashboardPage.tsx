@@ -51,6 +51,12 @@ export function CustomerDashboardPage() {
           <Link to="/cart" className="role-secondary-link">
             Mở giỏ hàng
           </Link>
+          <Link to="/orders" className="role-secondary-link">
+            Đơn của tôi
+          </Link>
+          <Link to="/profile" className="role-secondary-link">
+            Hồ sơ
+          </Link>
         </div>
       </header>
 
@@ -91,6 +97,8 @@ export function CustomerDashboardPage() {
           <div className="role-link-group">
             <Link to="/products">Trang sản phẩm</Link>
             <Link to="/cart">Xem giỏ hàng</Link>
+            <Link to="/orders">Đơn hàng của tôi</Link>
+            <Link to="/profile">Hồ sơ tài khoản</Link>
           </div>
         </article>
       </section>

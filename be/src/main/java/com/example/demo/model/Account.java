@@ -18,8 +18,8 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String login_name;
+    @Column(name = "login_name", nullable = false, unique = true, length = 100)
+    private String loginName;
 
     @Column(name = "full_name", length = 255)
     private String fullName;

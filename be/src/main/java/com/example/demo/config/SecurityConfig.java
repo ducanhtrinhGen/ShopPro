@@ -35,7 +35,7 @@ public class SecurityConfig {
      * Deployed frontend origin(s), e.g. "https://shoppro.id.vn".
      * Supports comma-separated list for preview/staging domains.
      */
-    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:}")
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:https://shoppro.id.vn,https://www.shoppro.id.vn,http://localhost:5173}")
     private String frontendUrl;
 
     @Bean
@@ -66,9 +66,10 @@ public class SecurityConfig {
                                 "/api/products",
                                 "/api/products/**",
                                 "/api/categories",
+                                "/api/categories/**",
                                 "/api/brands",
                                 "/api/brands/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/blog-posts/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blog-posts", "/api/blog-posts/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contact/messages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews").permitAll()
                         .requestMatchers("/products/image/**").permitAll()
@@ -139,7 +140,11 @@ public class SecurityConfig {
     }
 
     private List<String> buildAllowedOriginPatterns() {
-        List<String> base = List.of("http://localhost:*", "http://127.0.0.1:*");
+        List<String> base = List.of(
+                "https://shoppro.id.vn",
+                "https://www.shoppro.id.vn",
+                "http://localhost:5173"
+        );
 
         String raw = frontendUrl == null ? "" : frontendUrl.trim();
         if (raw.isEmpty()) {

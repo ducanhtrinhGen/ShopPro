@@ -1729,7 +1729,7 @@ export function AdminDashboardPage() {
         <aside className="owner-crm-sidebar">
           <div className="owner-crm-brand">
             <span>SP</span>
-            <strong>{isOwner ? "ShopPro Owner" : "ShopPro Admin"}</strong>
+            <strong>ShopPro Admin</strong>
           </div>
 
           <label className="owner-crm-search">
@@ -1769,13 +1769,14 @@ export function AdminDashboardPage() {
           <div className="owner-crm-sidebar-actions">
             <Link to="/products">Mở trang sản phẩm</Link>
             <Link to="/staff">Bảng điều khiển Staff</Link>
+            {isOwner ? <Link to="/owner">Báo cáo Owner</Link> : null}
           </div>
         </aside>
 
         <div className="owner-crm-main">
           <header className="owner-crm-header">
             <div>
-              <p className="owner-crm-kicker">{isOwner ? "BANG DIEU HANH OWNER/ADMIN" : "BANG DIEU HANH ADMIN"}</p>
+              <p className="owner-crm-kicker">BẢNG ĐIỀU HÀNH ADMIN</p>
               <h1>
                 {activeView === "overview"
                   ? "Trung tam dieu hanh quan tri"
@@ -1789,7 +1790,9 @@ export function AdminDashboardPage() {
               </h1>
               <p>
                 {activeView === "overview"
-                  ? "Theo doi KPI, don hang, ton kho va du lieu van hanh trong cung bang dieu khien."
+                  ? (isOwner
+                      ? "Admin dashboard phục vụ catalog/vận hành. Báo cáo cấp cao & quản trị tài khoản quản trị nằm ở trang Owner."
+                      : "Theo doi KPI, don hang, ton kho va du lieu van hanh trong cung bang dieu khien.")
                   : activeView === "categories"
                     ? "Trang danh muc dung cung bo cuc voi Owner de de theo doi va thao tac."
                     : activeView === "products"

@@ -53,7 +53,7 @@ export function getDefaultRouteForUser(user: AuthUser | null) {
   }
 
   if (isOwnerUser(user)) {
-    return "/admin";
+    return "/owner";
   }
 
   if (isAdminUser(user)) {

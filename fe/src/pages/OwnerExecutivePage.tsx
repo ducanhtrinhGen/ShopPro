@@ -1,19 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCategories } from "../api/catalog";
-import { apiRequest } from "../api/client";
 import { getOwnerOverview } from "../api/ownerReports";
 import { useAuth } from "../auth/AuthContext";
 import { isOwnerUser } from "../auth/roleUtils";
-import type { Category, OwnerOverview, OwnerRecentOrder, ProductPageResponse } from "../types";
-
-type DashboardStats = {
-  productTotal: number;
-  categoryTotal: number;
-  categories: Category[];
-};
-
-type DashboardView = "overview" | "categories";
+import type { OwnerOverview, OwnerRecentOrder } from "../types";
 
 const moneyFormatter = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -26,7 +16,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat("vi-VN", {
   timeStyle: "short"
 });
 
-const STATUS_OPTIONS = ["ALL", "PENDING", "PROCESSING", "SHIPPING", "COMPLETED", "CANCELLED"] as const;
+const STATUS_OPTIONS = ["ALL", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED"] as const;
 
 function normalizeStatus(status: string | null | undefined) {
   return (status ?? "").trim().toUpperCase();
@@ -99,62 +89,10 @@ export function OwnerExecutivePage() {
   const { user } = useAuth();
   const isOwner = isOwnerUser(user);
 
-  const [stats, setStats] = useState<DashboardStats>({
-    productTotal: 0,
-    categoryTotal: 0,
-    categories: []
-  });
   const [overview, setOverview] = useState<OwnerOverview | null>(null);
   const [isLoadingOverview, setIsLoadingOverview] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("ALL");
-  const [activeView, setActiveView] = useState<DashboardView>(isOwner ? "overview" : "categories");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const [categories, productPage] = await Promise.all([
-          getCategories(),
-          apiRequest<ProductPageResponse>("/api/products?sort=default&page=0")
-        ]);
-
-        setStats({
-          productTotal: productPage.totalItems,
-          categoryTotal: categories.length,
-          categories: categories.slice(0, 10)
-        });
-      } catch {
-        setStats({
-          productTotal: 0,
-          categoryTotal: 0,
-          categories: []
-        });
-      }
-    };
-
-    void loadStats();
-  }, []);
-
-  useEffect(() => {
-    if (!stats.categories.length) {
-      setSelectedCategoryId(null);
-      return;
-    }
-
-    setSelectedCategoryId((previous) => {
-      if (previous && stats.categories.some((category) => category.id === previous)) {
-        return previous;
-      }
-      return stats.categories[0].id;
-    });
-  }, [stats.categories]);
-
-  useEffect(() => {
-    if (!isOwner) {
-      setActiveView("categories");
-    }
-  }, [isOwner]);
 
   useEffect(() => {
     if (!isOwner) {
@@ -219,25 +157,7 @@ export function OwnerExecutivePage() {
     });
   }, [isOwner, keyword, recentOrders, statusFilter]);
 
-  const filteredCategories = useMemo(() => {
-    const normalizedKeyword = keyword.trim().toLowerCase();
-
-    if (!normalizedKeyword) {
-      return stats.categories;
-    }
-
-    return stats.categories.filter((category) => {
-      return category.name.toLowerCase().includes(normalizedKeyword) || String(category.id).includes(normalizedKeyword);
-    });
-  }, [stats.categories, keyword]);
-
-  const selectedCategory = useMemo(
-    () => stats.categories.find((category) => category.id === selectedCategoryId) ?? null,
-    [stats.categories, selectedCategoryId]
-  );
-
-  const sidebarPlaceholder =
-    activeView === "overview" ? "Tìm theo mã đơn / khách hàng..." : "Tìm theo tên danh mục / mã danh mục...";
+  const sidebarPlaceholder = "Tìm theo mã đơn / khách hàng...";
 
   return (
     <section className="owner-crm-page">
@@ -254,23 +174,21 @@ export function OwnerExecutivePage() {
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder={sidebarPlaceholder}
-              disabled={activeView === "overview" && !isOwner}
+              disabled={!isOwner}
             />
           </label>
 
           <div className="owner-crm-nav-group">
             <p>ĐIỀU HƯỚNG</p>
-            <button type="button" className={activeView === "overview" ? "active" : ""} onClick={() => setActiveView("overview")}>
-              Tổng quan
-            </button>
-            <button type="button" className={activeView === "categories" ? "active" : ""} onClick={() => setActiveView("categories")}>
-              Danh mục
+            <button type="button" className="active">
+              Executive / Reports
             </button>
           </div>
 
           <div className="owner-crm-sidebar-actions">
             <Link to="/products">Mở trang sản phẩm</Link>
-            <Link to={isOwner ? "/admin" : "/customer"}>{isOwner ? "Quản lý tài khoản" : "Trang khách hàng"}</Link>
+            <Link to="/admin">Quản trị (Admin)</Link>
+            <Link to="/staff">Vận hành (Staff)</Link>
           </div>
         </aside>
 
@@ -278,44 +196,38 @@ export function OwnerExecutivePage() {
           <header className="owner-crm-header">
             <div>
               <p className="owner-crm-kicker">
-                {activeView === "overview" ? (isOwner ? "BẢNG ĐIỀU HÀNH OWNER" : "KHU VẬN HÀNH STAFF") : "TRUNG TÂM DANH MỤC"}
+                BẢNG ĐIỀU HÀNH OWNER
               </p>
               <h1>
-                {activeView === "overview"
-                  ? isOwner
-                    ? "Trung tâm điều hành chủ shop"
-                    : "Bảng công việc nhân viên"
-                  : "Thông tin danh mục sản phẩm"}
+                Trung tâm điều hành chủ shop
               </h1>
               <p>
-                {activeView === "overview"
-                  ? isOwner
-                    ? "Bấm vào mục Tổng quan hoặc Danh mục bên trái để đổi toàn bộ dữ liệu hiển thị ở khung này."
-                    : "Tài khoản staff chỉ xem dữ liệu vận hành cơ bản, không có báo cáo doanh thu của owner."
-                  : "Bạn đang xem đầy đủ dữ liệu danh mục ở panel bên phải. Chọn từng danh mục bên trái để nổi bật thông tin chi tiết."}
+                Owner tập trung báo cáo cấp cao và kiểm soát tài khoản quản trị. Admin/Staff xử lý vận hành & catalog ở khu vực riêng.
               </p>
             </div>
 
             <div className="owner-crm-header-actions">
-              <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to={isOwner ? "/admin" : "/customer"}>{isOwner ? "Quản lý tài khoản" : "Khu khách hàng"}</Link>
+              <Link to="/admin">Đi tới Admin</Link>
+              <Link to="/products">Mở trang sản phẩm</Link>
             </div>
           </header>
 
-          {activeView === "overview" ? (
+          {!isOwner ? <p className="owner-crm-empty">Chỉ Owner mới xem được trang này.</p> : null}
+
+          {isOwner ? (
             <>
               <section className="owner-crm-kpi-grid">
                 <article>
-                  <span>Tổng mặt hàng</span>
-                  <strong>{stats.productTotal}</strong>
-                </article>
-                <article>
-                  <span>Tổng danh mục</span>
-                  <strong>{stats.categoryTotal}</strong>
-                </article>
-                <article>
-                  <span>Tổng đơn hàng</span>
+                  <span>Tổng đơn</span>
                   <strong>{overview?.totalOrders ?? 0}</strong>
+                </article>
+                <article>
+                  <span>Chờ xử lý</span>
+                  <strong>{overview?.pendingOrders ?? 0}</strong>
+                </article>
+                <article>
+                  <span>Hoàn tất</span>
+                  <strong>{overview?.completedOrders ?? 0}</strong>
                 </article>
                 <article>
                   <span>Doanh thu</span>
@@ -323,26 +235,36 @@ export function OwnerExecutivePage() {
                 </article>
               </section>
 
+              <section className="owner-crm-kpi-grid">
+                <article>
+                  <span>Lợi nhuận ước tính</span>
+                  <strong>{moneyFormatter.format(overview?.estimatedProfit ?? 0)}</strong>
+                </article>
+                <article>
+                  <span>Giá trị TB/đơn</span>
+                  <strong>{moneyFormatter.format(overview?.averageOrderValue ?? 0)}</strong>
+                </article>
+                <article>
+                  <span>Quản trị hoạt động</span>
+                  <strong>{overview?.activeManagementAccounts ?? 0}</strong>
+                </article>
+                <article>
+                  <span>Quản trị bị khóa</span>
+                  <strong>{overview?.lockedManagementAccounts ?? 0}</strong>
+                </article>
+              </section>
+
               <section className="owner-crm-panel">
                 <div className="owner-crm-panel-head">
-                  <h2>{isOwner ? `Đơn hàng gần đây (${filteredOrders.length})` : "Dữ liệu vận hành"}</h2>
+                  <h2>Đơn gần đây ({filteredOrders.length})</h2>
                   <div className="owner-crm-toolbar">
-                    <input
-                      type="text"
-                      value={keyword}
-                      onChange={(event) => setKeyword(event.target.value)}
-                      placeholder="Tìm kiếm nhanh..."
-                      disabled={!isOwner}
-                    />
-                    <select
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_OPTIONS)[number])}
-                      disabled={!isOwner}
-                    >
+                    <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_OPTIONS)[number])}>
                       <option value="ALL">Tất cả trạng thái</option>
                       <option value="PENDING">Chờ xử lý</option>
+                      <option value="CONFIRMED">Đã xác nhận</option>
                       <option value="PROCESSING">Đang xử lý</option>
                       <option value="SHIPPING">Đang giao</option>
+                      <option value="DELIVERED">Đã giao</option>
                       <option value="COMPLETED">Hoàn tất</option>
                       <option value="CANCELLED">Đã hủy</option>
                     </select>
@@ -352,41 +274,36 @@ export function OwnerExecutivePage() {
                         setKeyword("");
                         setStatusFilter("ALL");
                       }}
-                      disabled={!isOwner}
                     >
                       Đặt lại
                     </button>
                   </div>
                 </div>
 
-                {!isOwner ? (
-                  <p className="owner-crm-empty">Tài khoản staff không có quyền xem báo cáo doanh thu và danh sách đơn hàng của owner.</p>
-                ) : null}
-
-                {isOwner && isLoadingOverview ? (
+                {isLoadingOverview ? (
                   <div className="loading-block">
                     <div className="loading-ring" />
                     <p>Đang tải dữ liệu điều hành...</p>
                   </div>
                 ) : null}
 
-                {isOwner && !isLoadingOverview && !filteredOrders.length ? (
-                  <p className="owner-crm-empty">Không có đơn hàng phù hợp với bộ lọc hiện tại.</p>
+                {!isLoadingOverview && !filteredOrders.length ? (
+                  <p className="owner-crm-empty">Không có đơn phù hợp.</p>
                 ) : null}
 
-                {isOwner && !isLoadingOverview && filteredOrders.length ? (
+                {!isLoadingOverview && filteredOrders.length ? (
                   <div className="owner-crm-table-wrap">
                     <table className="owner-crm-table">
                       <thead>
                         <tr>
                           <th>Mã đơn</th>
-                          <th>Tên khách hàng</th>
+                          <th>Khách</th>
                           <th>Thẻ</th>
                           <th>Trạng thái</th>
-                          <th>Kênh bán hàng</th>
-                          <th>Nhóm khách hàng</th>
-                          <th>Tổng tiền</th>
-                          <th>Cập nhật</th>
+                          <th>Kênh</th>
+                          <th>Nhóm</th>
+                          <th>Tổng</th>
+                          <th>Thời gian</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -414,101 +331,7 @@ export function OwnerExecutivePage() {
                 ) : null}
               </section>
             </>
-          ) : (
-            <>
-              <section className="owner-crm-kpi-grid">
-                <article>
-                  <span>Tổng danh mục</span>
-                  <strong>{stats.categoryTotal}</strong>
-                </article>
-                <article>
-                  <span>Danh mục đang lọc</span>
-                  <strong>{filteredCategories.length}</strong>
-                </article>
-                <article>
-                  <span>Danh mục đang chọn</span>
-                  <strong>{selectedCategory ? selectedCategory.name : "Tất cả"}</strong>
-                </article>
-                <article>
-                  <span>Tổng mặt hàng</span>
-                  <strong>{stats.productTotal}</strong>
-                </article>
-              </section>
-
-              <section className="owner-crm-panel">
-                <div className="owner-crm-panel-head">
-                  <h2>Danh mục hiện có ({filteredCategories.length})</h2>
-                  <div className="owner-crm-toolbar">
-                    <button type="button" onClick={() => setSelectedCategoryId(null)}>
-                      Hiện tất cả danh mục
-                    </button>
-                  </div>
-                </div>
-
-                {filteredCategories.length ? (
-                  <div className="owner-crm-table-wrap">
-                    <table className="owner-crm-table">
-                      <thead>
-                        <tr>
-                          <th>Mã danh mục</th>
-                          <th>Tên danh mục</th>
-                          <th>Hành động</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredCategories.map((category) => {
-                          const isSelected = selectedCategoryId === category.id;
-                          return (
-                            <tr
-                              key={category.id}
-                              className={isSelected ? "is-selected is-clickable" : "is-clickable"}
-                              onClick={() => setSelectedCategoryId(category.id)}
-                            >
-                              <td className="owner-crm-order-code">DM{String(category.id).padStart(3, "0")}</td>
-                              <td>
-                                <strong>{category.name}</strong>
-                              </td>
-                              <td>
-                                <div className="owner-crm-category-links">
-                                  <Link to={`/products?categoryId=${category.id}`}>Xem sản phẩm</Link>
-                                  {isOwner ? <Link to="/admin">Quản lý</Link> : null}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="owner-crm-empty">Không có danh mục phù hợp với từ khóa hiện tại.</p>
-                )}
-              </section>
-
-              <section className="owner-crm-panel">
-                <div className="owner-crm-panel-head">
-                  <h2>Chi tiết danh mục</h2>
-                </div>
-
-                {selectedCategory ? (
-                  <div className="owner-crm-category-detail">
-                    <p>
-                      <strong>Mã danh mục:</strong> DM{String(selectedCategory.id).padStart(3, "0")}
-                    </p>
-                    <p>
-                      <strong>Tên danh mục:</strong> {selectedCategory.name}
-                    </p>
-                    <div className="owner-crm-category-links">
-                      <Link to={`/products?categoryId=${selectedCategory.id}`}>Mở trang sản phẩm theo danh mục</Link>
-                      <Link to="/products">Mở toàn bộ sản phẩm</Link>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="owner-crm-empty">Chọn một danh mục ở bảng bên trên để xem thông tin chi tiết.</p>
-                )}
-              </section>
-            </>
-          )}
+          ) : null}
         </div>
       </div>
     </section>

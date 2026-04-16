@@ -53,6 +53,10 @@ public final class AdminOpsDtos {
     public record OrderStatusUpdateRequest(String status) {
     }
 
+    /** Staff-only: adjust on-hand quantity (no price/catalog edits). */
+    public record ProductQuantityUpdateRequest(Integer quantity) {
+    }
+
     public record AdminProductItem(
             int id,
             String name,

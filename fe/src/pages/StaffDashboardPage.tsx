@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAdminDataIssues, getAdminLowStockProducts, getAdminOrders, updateAdminOrderStatus } from "../api/adminOperations";
+import {
+  getStaffDataIssues,
+  getStaffLowStockProducts,
+  getStaffOrders,
+  patchStaffProductQuantity,
+  updateStaffOrderStatus
+} from "../api/staffOperations";
 import { ApiRequestError } from "../api/client";
 import type { AdminDataIssue, AdminOrderItem, AdminProductOpsItem } from "../types";
 
@@ -49,6 +55,8 @@ export function StaffDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>("ALL");
   const [orderDraftStatus, setOrderDraftStatus] = useState<Record<number, string>>({});
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [stockQtyDraft, setStockQtyDraft] = useState<Record<number, string>>({});
+  const [updatingProductId, setUpdatingProductId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,9 +67,9 @@ export function StaffDashboardPage() {
     const load = async () => {
       try {
         const [orderList, low, issues] = await Promise.all([
-          getAdminOrders(),
-          getAdminLowStockProducts(7),
-          getAdminDataIssues()
+          getStaffOrders(),
+          getStaffLowStockProducts(7),
+          getStaffDataIssues()
         ]);
         if (!active) return;
         setOrders(orderList);
@@ -69,7 +77,7 @@ export function StaffDashboardPage() {
         setDataIssues(issues);
       } catch (e) {
         if (!active) return;
-        setError(toErrorMessage(e, "Khong tai duoc du lieu van hanh."));
+        setError(toErrorMessage(e, "Không tải được dữ liệu vận hành."));
       } finally {
         if (active) setIsLoading(false);
       }
@@ -95,20 +103,40 @@ export function StaffDashboardPage() {
     });
   }, [orders, keyword, statusFilter]);
 
+  const handleStockUpdate = async (productId: number) => {
+    const raw = (stockQtyDraft[productId] ?? "").trim();
+    const qty = parseInt(raw, 10);
+    if (Number.isNaN(qty) || qty < 0) {
+      setMessage("Số lượng không hợp lệ.");
+      return;
+    }
+    setUpdatingProductId(productId);
+    setMessage(null);
+    try {
+      const updated = await patchStaffProductQuantity(productId, qty);
+      setLowStock((prev) => prev.map((p) => (p.id === productId ? { ...p, quantity: updated.quantity } : p)));
+      setMessage(`Đã cập nhật tồn kho sản phẩm #${productId}.`);
+    } catch (e) {
+      setMessage(toErrorMessage(e, `Không cập nhật được sản phẩm #${productId}.`));
+    } finally {
+      setUpdatingProductId(null);
+    }
+  };
+
   const handleStatusUpdate = async (orderId: number) => {
     const target = (orderDraftStatus[orderId] ?? "").trim().toUpperCase();
     if (!target) {
-      setMessage("Chon trang thai truoc khi cap nhat.");
+      setMessage("Chọn trạng thái trước khi cập nhật.");
       return;
     }
     setUpdatingOrderId(orderId);
     setMessage(null);
     try {
-      const updated = await updateAdminOrderStatus(orderId, target);
+      const updated = await updateStaffOrderStatus(orderId, target);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, orderStatus: updated.orderStatus } : o)));
-      setMessage(`Da cap nhat don #${orderId}.`);
+      setMessage(`Đã cập nhật đơn #${orderId}.`);
     } catch (e) {
-      setMessage(toErrorMessage(e, `Khong cap nhat duoc don #${orderId}.`));
+      setMessage(toErrorMessage(e, `Không cập nhật được đơn #${orderId}.`));
     } finally {
       setUpdatingOrderId(null);
     }
@@ -135,7 +163,10 @@ export function StaffDashboardPage() {
             <div>
               <p className="owner-crm-kicker">VAN HANH</p>
               <h1>Bang dieu khien nhan vien</h1>
-              <p>Ban co quyen cap nhat trang thai don hang, xem ton kho thap va loi du lieu van hanh. Khong chinh sua catalog.</p>
+              <p>
+              API <code>/api/staff/**</code>: đơn hàng, tồn kho thấp, cảnh báo dữ liệu, chỉnh số lượng tồn. Không chỉnh
+              giá/danh mục.
+            </p>
             </div>
           </header>
 
@@ -206,7 +237,9 @@ export function StaffDashboardPage() {
                                       setOrderDraftStatus((p) => ({ ...p, [order.id]: e.target.value }))
                                     }
                                   >
-                                    {(["PENDING", "PROCESSING", "SHIPPING", "COMPLETED", "CANCELLED"] as const).map(
+                                    {(
+                                      ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED"] as const
+                                    ).map(
                                       (s) => (
                                         <option key={s} value={s}>
                                           {toStatusLabel(s)}
@@ -231,24 +264,47 @@ export function StaffDashboardPage() {
                     </table>
                   </div>
                 ) : (
-                  <p className="owner-crm-empty">Khong co don phu hop.</p>
+                  <p className="owner-crm-empty">Không có đơn phù hợp.</p>
                 )}
               </section>
 
               <section className="owner-crm-panel">
                 <div className="owner-crm-panel-head">
-                  <h2>Ton kho thap</h2>
+                  <h2>Tồn kho thấp</h2>
                 </div>
                 {lowStock.length ? (
                   <ul>
-                    {lowStock.slice(0, 15).map((p) => (
-                      <li key={p.id}>
-                        {p.name} — SL: {p.quantity}
-                      </li>
-                    ))}
+                    {lowStock.slice(0, 15).map((p) => {
+                      const draft = stockQtyDraft[p.id] ?? String(p.quantity);
+                      return (
+                        <li key={p.id} style={{ marginBottom: "0.5rem" }}>
+                          <span>
+                            <strong>{p.name}</strong> — hiện tại: {p.quantity}
+                          </span>
+                          <div className="owner-crm-inline-actions">
+                            <input
+                              type="number"
+                              min={0}
+                              className="owner-crm-inline-select"
+                              style={{ width: "5rem" }}
+                              value={draft}
+                              onChange={(e) => setStockQtyDraft((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                            />
+                            <button
+                              type="button"
+                              className="role-admin-button"
+                              disabled={updatingProductId === p.id}
+                              onClick={() => void handleStockUpdate(p.id)}
+                            >
+                              {updatingProductId === p.id ? "..." : "Lưu SL"}
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
-                  <p className="owner-crm-empty">Khong co canh bao ton kho.</p>
+                  <p className="owner-crm-empty">Không có cảnh báo tồn kho.</p>
                 )}
               </section>
 

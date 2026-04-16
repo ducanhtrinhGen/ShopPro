@@ -72,11 +72,8 @@ public class SecurityConfig {
                         .requestMatchers("/mvc/**").hasAnyRole("OWNER", "ADMIN")
                         .requestMatchers("/api/owner/**").hasRole("OWNER")
                         .requestMatchers("/api/admin/users/**").hasRole("OWNER")
-                        // Staff: orders, inventory, data-health
-                        .requestMatchers("/api/admin/orders", "/api/admin/orders/**")
-                                .hasAnyRole("OWNER", "ADMIN", "STAFF")
-                        .requestMatchers("/api/admin/inventory/**").hasAnyRole("OWNER", "ADMIN", "STAFF")
-                        .requestMatchers("/api/admin/data-health/**").hasAnyRole("OWNER", "ADMIN", "STAFF")
+                        // Staff: dedicated operational API only (no /api/admin/**)
+                        .requestMatchers("/api/staff/**").hasRole("STAFF")
                         // Admin/Owner: catalog, nội dung, khuyến mãi, upload
                         .requestMatchers("/api/admin/products/**").hasAnyRole("OWNER", "ADMIN")
                         .requestMatchers("/api/admin/categories/**").hasAnyRole("OWNER", "ADMIN")

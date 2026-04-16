@@ -228,7 +228,7 @@ class ApiFlowTests {
     }
 
     @Test
-    void staffShouldAccessOrderAndInventoryApisButNotCatalogAdmin() throws Exception {
+    void staffShouldUseStaffApiAndNotAdminOperationalOrCatalog() throws Exception {
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -242,11 +242,14 @@ class ApiFlowTests {
 
         MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
 
-        mockMvc.perform(get("/api/admin/orders").session(session))
+        mockMvc.perform(get("/api/staff/orders").session(session))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/admin/inventory/low-stock").session(session))
+        mockMvc.perform(get("/api/staff/inventory/low-stock").session(session))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/admin/orders").session(session))
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/admin/products").session(session))
                 .andExpect(status().isForbidden());

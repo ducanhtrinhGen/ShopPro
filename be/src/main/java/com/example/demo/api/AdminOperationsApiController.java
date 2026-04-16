@@ -3,7 +3,6 @@ package com.example.demo.api;
 import com.example.demo.api.dto.AdminOpsDtos.AdminBlogPostItem;
 import com.example.demo.api.dto.AdminOpsDtos.AdminBrandItem;
 import com.example.demo.api.dto.AdminOpsDtos.AdminCategoryItem;
-import com.example.demo.api.dto.AdminOpsDtos.AdminOrderDetailItem;
 import com.example.demo.api.dto.AdminOpsDtos.AdminOrderDetailResponse;
 import com.example.demo.api.dto.AdminOpsDtos.AdminOrderItem;
 import com.example.demo.api.dto.AdminOpsDtos.AdminProductItem;
@@ -19,7 +18,6 @@ import com.example.demo.api.dto.ApiError;
 import com.example.demo.model.BlogPost;
 import com.example.demo.model.Brand;
 import com.example.demo.model.Category;
-import com.example.demo.model.Order;
 import com.example.demo.model.OrderDetail;
 import com.example.demo.model.Product;
 import com.example.demo.repository.BlogPostRepository;
@@ -27,11 +25,11 @@ import com.example.demo.repository.BrandRepository;
 import com.example.demo.repository.CartLineItemRepository;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.OrderDetailRepository;
-import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.ReviewRepository;
 import com.example.demo.repository.WishlistRepository;
+import com.example.demo.service.OperationalBackofficeService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -49,10 +47,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.text.Normalizer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 @RestController
@@ -61,17 +57,8 @@ public class AdminOperationsApiController {
 
     private static final Pattern NON_SLUG = Pattern.compile("[^a-z0-9]+");
     private static final Pattern MULTI_DASH = Pattern.compile("-{2,}");
-    private static final Set<String> ALLOWED_ORDER_STATUSES = Set.of(
-            "PENDING",
-            "CONFIRMED",
-            "PROCESSING",
-            "SHIPPING",
-            "DELIVERED",
-            "COMPLETED",
-            "CANCELLED",
-            "FAILED",
-            "REFUNDED");
 
+    private final OperationalBackofficeService operationalBackofficeService;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
@@ -81,9 +68,9 @@ public class AdminOperationsApiController {
     private final ReviewRepository reviewRepository;
     private final WishlistRepository wishlistRepository;
     private final OrderDetailRepository orderDetailRepository;
-    private final OrderRepository orderRepository;
 
     public AdminOperationsApiController(
+            OperationalBackofficeService operationalBackofficeService,
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
             BrandRepository brandRepository,
@@ -92,8 +79,8 @@ public class AdminOperationsApiController {
             ProductImageRepository productImageRepository,
             ReviewRepository reviewRepository,
             WishlistRepository wishlistRepository,
-            OrderDetailRepository orderDetailRepository,
-            OrderRepository orderRepository) {
+            OrderDetailRepository orderDetailRepository) {
+        this.operationalBackofficeService = operationalBackofficeService;
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
@@ -103,7 +90,6 @@ public class AdminOperationsApiController {
         this.reviewRepository = reviewRepository;
         this.wishlistRepository = wishlistRepository;
         this.orderDetailRepository = orderDetailRepository;
-        this.orderRepository = orderRepository;
     }
 
     @GetMapping("/products")
@@ -443,38 +429,17 @@ public class AdminOperationsApiController {
     public List<AdminOrderItem> listOrders(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "") String keyword) {
-        String normalizedStatus = status == null || status.isBlank() ? null : status.trim().toUpperCase(Locale.ROOT);
-        String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
-
-        return orderRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"))).stream()
-                .filter(order -> normalizedStatus == null
-                        || normalizeOrderStatus(order.getOrderStatus(), "PENDING").equals(normalizedStatus))
-                .filter(order -> {
-                    if (normalizedKeyword.isEmpty()) {
-                        return true;
-                    }
-
-                    String customerUsername = resolveCustomerUsername(order).toLowerCase(Locale.ROOT);
-                    String receiver = order.getReceiverName() == null ? "" : order.getReceiverName().toLowerCase(Locale.ROOT);
-                    String email = order.getEmail() == null ? "" : order.getEmail().toLowerCase(Locale.ROOT);
-                    String idAsText = String.valueOf(order.getId());
-                    return customerUsername.contains(normalizedKeyword)
-                            || receiver.contains(normalizedKeyword)
-                            || email.contains(normalizedKeyword)
-                            || idAsText.contains(normalizedKeyword);
-                })
-                .map(this::toOrderItem)
-                .toList();
+        return operationalBackofficeService.listOrders(status, keyword);
     }
 
     @GetMapping("/orders/{id}")
     @Transactional(readOnly = true)
     public ResponseEntity<?> getOrderById(@PathVariable int id) {
-        Order order = orderRepository.findById(id).orElse(null);
-        if (order == null) {
+        AdminOrderDetailResponse detail = operationalBackofficeService.getOrderDetail(id);
+        if (detail == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Khong tim thay don hang voi id: " + id));
         }
-        return ResponseEntity.ok(toOrderDetailResponse(order));
+        return ResponseEntity.ok(detail);
     }
 
     @PutMapping("/orders/{id}/status")
@@ -486,16 +451,12 @@ public class AdminOperationsApiController {
             return ResponseEntity.badRequest().body(new ApiError("Trang thai don hang khong hop le."));
         }
 
-        Order order = orderRepository.findById(id).orElse(null);
-        if (order == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Khong tim thay don hang voi id: " + id));
-        }
-
         try {
-            String nextStatus = normalizeOrderStatusForUpdate(request.status());
-            order.setOrderStatus(nextStatus);
-            Order updated = orderRepository.save(order);
-            return ResponseEntity.ok(toOrderDetailResponse(updated));
+            AdminOrderDetailResponse updated = operationalBackofficeService.updateOrderStatus(id, request.status(), false);
+            if (updated == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Khong tim thay don hang voi id: " + id));
+            }
+            return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
         }
@@ -504,60 +465,13 @@ public class AdminOperationsApiController {
     @GetMapping("/inventory/low-stock")
     @Transactional(readOnly = true)
     public List<AdminProductItem> listLowStockProducts(@RequestParam(defaultValue = "5") int threshold) {
-        int safeThreshold = Math.max(threshold, 0);
-        return productRepository.findAll(Sort.by(Sort.Direction.ASC, "quantity").and(Sort.by("id").ascending())).stream()
-                .filter(product -> product.getQuantity() <= safeThreshold)
-                .map(this::toProductItem)
-                .toList();
+        return operationalBackofficeService.listLowStockProducts(threshold);
     }
 
     @GetMapping("/data-health/issues")
     @Transactional(readOnly = true)
     public List<DataIssueItem> listDataIssues() {
-        List<DataIssueItem> issues = new ArrayList<>();
-
-        for (Product product : productRepository.findAll()) {
-            if (product.getPrice() <= 0) {
-                issues.add(new DataIssueItem("PRODUCT_PRICE_INVALID",
-                        "San pham co gia khong hop le: " + product.getName(),
-                        product.getId()));
-            }
-            if (product.getQuantity() < 0) {
-                issues.add(new DataIssueItem("PRODUCT_QUANTITY_INVALID",
-                        "San pham co ton kho am: " + product.getName(),
-                        product.getId()));
-            }
-            if (product.getDiscountPrice() != null
-                    && (product.getDiscountPrice() <= 0 || product.getDiscountPrice() >= product.getPrice())) {
-                issues.add(new DataIssueItem("PRODUCT_DISCOUNT_INVALID",
-                        "Gia khuyen mai khong hop le: " + product.getName(),
-                        product.getId()));
-            }
-            if (product.getCategory() == null) {
-                issues.add(new DataIssueItem("PRODUCT_CATEGORY_MISSING",
-                        "San pham chua gan danh muc: " + product.getName(),
-                        product.getId()));
-            }
-            if (product.getBrand() == null) {
-                issues.add(new DataIssueItem("PRODUCT_BRAND_MISSING",
-                        "San pham chua gan thuong hieu: " + product.getName(),
-                        product.getId()));
-            }
-        }
-
-        for (Order order : orderRepository.findAll()) {
-            long subtotalSum = order.getOrderDetails().stream()
-                    .mapToLong(OrderDetail::getSubtotal)
-                    .sum();
-            if (!order.getOrderDetails().isEmpty() && subtotalSum != order.getTotalAmount()) {
-                issues.add(new DataIssueItem(
-                        "ORDER_TOTAL_MISMATCH",
-                        "Tong tien don hang khong khop voi chi tiet don.",
-                        order.getId()));
-            }
-        }
-
-        return issues;
+        return operationalBackofficeService.listDataIssues();
     }
 
     private void applyProductUpsert(Product product, ProductUpsertRequest request, Integer existingProductId) {
@@ -708,62 +622,6 @@ public class AdminOperationsApiController {
                 blogPost.getCreatedAt());
     }
 
-    private AdminOrderItem toOrderItem(Order order) {
-        int itemCount = order.getOrderDetails().stream()
-                .mapToInt(OrderDetail::getQuantity)
-                .sum();
-        return new AdminOrderItem(
-                order.getId(),
-                order.getCreatedAt(),
-                normalizeOrderStatus(order.getOrderStatus(), "PENDING"),
-                order.getTotalAmount(),
-                trimToNull(order.getPaymentMethod()),
-                trimToNull(order.getReceiverName()),
-                resolveCustomerUsername(order),
-                itemCount);
-    }
-
-    private AdminOrderDetailResponse toOrderDetailResponse(Order order) {
-        List<AdminOrderDetailItem> details = order.getOrderDetails().stream()
-                .map(this::toOrderDetailItem)
-                .toList();
-        return new AdminOrderDetailResponse(
-                order.getId(),
-                order.getCreatedAt(),
-                normalizeOrderStatus(order.getOrderStatus(), "PENDING"),
-                order.getTotalAmount(),
-                trimToNull(order.getPaymentMethod()),
-                trimToNull(order.getReceiverName()),
-                trimToNull(order.getPhone()),
-                trimToNull(order.getAddress()),
-                trimToNull(order.getEmail()),
-                resolveCustomerUsername(order),
-                details);
-    }
-
-    private AdminOrderDetailItem toOrderDetailItem(OrderDetail detail) {
-        Integer productId = detail.getProduct() != null ? detail.getProduct().getId() : null;
-        String productName = detail.getProductName();
-        if (isBlank(productName) && detail.getProduct() != null) {
-            productName = detail.getProduct().getName();
-        }
-
-        return new AdminOrderDetailItem(
-                detail.getId(),
-                productId,
-                trimToNull(productName),
-                detail.getUnitPrice(),
-                detail.getQuantity(),
-                detail.getSubtotal());
-    }
-
-    private String resolveCustomerUsername(Order order) {
-        if (order.getAccount() == null || isBlank(order.getAccount().getLoginName())) {
-            return "guest";
-        }
-        return order.getAccount().getLoginName();
-    }
-
     private String toSlug(String raw) {
         String normalized = raw == null ? "" : raw.trim();
         if (normalized.isEmpty()) {
@@ -783,22 +641,6 @@ public class AdminOperationsApiController {
             return defaultValue == null ? "ACTIVE" : defaultValue.trim().toUpperCase(Locale.ROOT);
         }
         return status.trim().toUpperCase(Locale.ROOT);
-    }
-
-    private String normalizeOrderStatus(String status, String defaultValue) {
-        if (status == null || status.isBlank()) {
-            return defaultValue;
-        }
-        return status.trim().toUpperCase(Locale.ROOT);
-    }
-
-    private String normalizeOrderStatusForUpdate(String status) {
-        String normalized = normalizeOrderStatus(status, "PENDING");
-        if (!ALLOWED_ORDER_STATUSES.contains(normalized)) {
-            throw new IllegalArgumentException(
-                    "Trang thai don hang khong hop le. Cho phep: " + String.join(", ", ALLOWED_ORDER_STATUSES));
-        }
-        return normalized;
     }
 
     private void detachOrderDetails(Product product) {

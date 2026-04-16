@@ -1,4 +1,7 @@
 {
+  "env": {
+    "VITE_API_URL": "https://api.shoppro.id.vn"
+  },
   "rewrites": [
     {
       "source": "/api/:path*",

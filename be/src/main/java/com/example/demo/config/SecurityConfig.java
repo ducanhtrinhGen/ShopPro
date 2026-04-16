@@ -62,7 +62,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authz) -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/brands").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**",
+                                "/api/categories",
+                                "/api/brands",
+                                "/api/brands/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blog-posts/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contact/messages").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews").permitAll()

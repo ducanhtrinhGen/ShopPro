@@ -39,58 +39,29 @@ type AccountMenuItem = {
   action?: AccountMenuAction;
 };
 
-const footerColumns: FooterColumn[] = [
+const footerColumnsBase: FooterColumn[] = [
   {
     title: "SHOP",
     links: [
-      { label: "Sản phẩm mới", href: "/products?sort=default" },
-      { label: "Ưu đãi đặc biệt", href: "/products?promo=1" },
-      { label: "Bán chạy", href: "/products?sort=priceDesc" },
-      { label: "Mua theo danh mục", href: "/products" },
-      { label: "Doanh nghiệp", href: "/products?business=1" }
-    ]
-  },
-  {
-    title: "EXPLORE",
-    links: [
-      { label: "Xây dựng cấu hình", href: "/products?build=1" },
-      { label: "PC Builder", href: "/products?build=1" },
-      { label: "Linh kiện nổi bật", href: "/products?highlight=1" },
-      { label: "Xu hướng gaming", href: "/products?gaming=1" },
-      { label: "Wallpaper", href: "/products?wallpaper=1" }
+      { label: "Mới nhất", href: "/products?sort=newest" },
+      { label: "Đang giảm giá", href: "/products?promoOnly=1" },
+      { label: "Còn hàng", href: "/products?inStockOnly=1" },
+      { label: "Mua theo danh mục", href: "/products" }
     ]
   },
   {
     title: "SHOPPRO",
     links: [
-      { label: "Giới thiệu", href: "/products?about=1" },
-      { label: "Liên hệ", href: "/contact" },
-      { label: "Tuyển dụng", href: "/products?career=1" },
       { label: "Blog", href: "/blog" },
+      { label: "Liên hệ", href: "/contact" },
       { label: "Cửa hàng", href: "/products" }
-    ]
-  },
-  {
-    title: "SUPPORT",
-    links: [
-      { label: "Tải về", href: "/products?download=1" },
-      { label: "Hỗ trợ khách hàng", href: "/products?support=1" },
-      { label: "Bảo hành", href: "/products?warranty=1" },
-      { label: "Đổi trả", href: "/products?returns=1" },
-      { label: "Điều khoản", href: "/products?terms=1" }
     ]
   }
 ];
 
 const footerSocialLinks = [
-  { label: "X", href: "#" },
-  { label: "TT", href: "#" },
-  { label: "FB", href: "#" },
-  { label: "IG", href: "#" },
-  { label: "YT", href: "#" },
-  { label: "TW", href: "#" },
-  { label: "DC", href: "#" },
-  { label: "RD", href: "#" }
+  { label: "Email", href: "/contact" },
+  { label: "Blog", href: "/blog" }
 ];
 
 function IconBase({ className, children }: IconProps & { children: ReactNode }) {
@@ -425,6 +396,27 @@ export function AppShell() {
     return items;
   }, [dashboardPath, isAdminOrOwner, isLoggedIn, isOwner, showCustomerLinks, showStaffNav]);
 
+  const footerColumns = useMemo<FooterColumn[]>(() => {
+    const accountLinks = isLoggedIn && showCustomerLinks
+      ? [
+          { label: "Wishlist", href: "/wishlist" },
+          { label: "Đơn hàng của tôi", href: "/orders" },
+          { label: "Thông tin tài khoản", href: "/profile" }
+        ]
+      : [
+          { label: "Đăng nhập", href: "/login" },
+          { label: "Đăng ký", href: "/register" }
+        ];
+
+    return [
+      ...footerColumnsBase,
+      {
+        title: "ACCOUNT",
+        links: accountLinks
+      }
+    ];
+  }, [isLoggedIn, showCustomerLinks]);
+
   const navClassName = ({ isActive }: { isActive: boolean }) =>
     isActive ? "corsair-menu-link active" : "corsair-menu-link";
 
@@ -565,17 +557,17 @@ export function AppShell() {
             </p>
 
             <nav className="corsair-top-links" aria-label="Tiện ích nhanh">
-              <Link to="/products?promo=1" className="corsair-top-link">
+              <Link to="/products?promoOnly=1" className="corsair-top-link">
                 Khuyến mãi
               </Link>
-              <Link to="/products?installment=1" className="corsair-top-link">
-                Trả góp
+              <Link to="/products?inStockOnly=1" className="corsair-top-link">
+                Còn hàng
               </Link>
-              <Link to="/products?priceList=1" className="corsair-top-link">
-                Bảng giá
+              <Link to="/blog" className="corsair-top-link">
+                Blog
               </Link>
-              <Link to="/products?build=1" className="corsair-top-link">
-                Xây dựng cấu hình
+              <Link to="/contact" className="corsair-top-link">
+                Liên hệ
               </Link>
             </nav>
 
@@ -811,13 +803,16 @@ export function AppShell() {
             </Link>
 
             <p>
-              Nhận ưu đãi độc quyền, tin sản phẩm mới và sự kiện công nghệ từ ShopPro mỗi tuần.
+              Cần tư vấn build PC hoặc báo lỗi đơn hàng? Hãy gửi liên hệ, ShopPro sẽ phản hồi sớm.
             </p>
-
-            <form className="shoppro-footer-signup" onSubmit={(event) => event.preventDefault()}>
-              <input type="email" placeholder="Nhập email của bạn" aria-label="Email nhận tin" />
-              <button type="submit">Đăng ký</button>
-            </form>
+            <div className="shoppro-footer-signup" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link to="/contact" className="role-admin-button" style={{ textDecoration: "none" }}>
+                Gửi liên hệ
+              </Link>
+              <Link to="/blog" style={{ textDecoration: "none" }}>
+                Xem blog →
+              </Link>
+            </div>
 
             <div className="shoppro-footer-social" aria-label="Mạng xã hội">
               {footerSocialLinks.map((item) => (
@@ -845,10 +840,8 @@ export function AppShell() {
         <div className="shoppro-footer-legal">
           <p>Copyright © 2026 SHOPPRO. All rights reserved.</p>
           <div>
-            <a href="#">Sitemap</a>
-            <a href="#">Chính sách</a>
-            <a href="#">Điều khoản</a>
-            <a href="#">Cookie</a>
+            <Link to="/blog">Blog</Link>
+            <Link to="/contact">Liên hệ</Link>
           </div>
         </div>
       </footer>

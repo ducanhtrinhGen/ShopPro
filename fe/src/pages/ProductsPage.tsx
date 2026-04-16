@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiRequest, ApiRequestError } from "../api/client";
-import { getCategories } from "../api/catalog";
-import type { Category, Product, ProductPageResponse } from "../types";
+import { getBrands, getCategories } from "../api/catalog";
+import type { Brand, Category, Product, ProductPageResponse } from "../types";
 
-type ProductSort = "default" | "priceAsc" | "priceDesc";
+type ProductSort = "default" | "newest" | "priceAsc" | "priceDesc" | "discountDesc";
 
 type ProductQuery = {
   keyword: string;
   categoryId: string;
+  brandId: string;
+  promoOnly: boolean;
+  inStockOnly: boolean;
   sort: ProductSort;
   page: number;
+  pageSize: number;
 };
 
 const moneyFormatter = new Intl.NumberFormat("vi-VN", {
@@ -55,7 +59,7 @@ const serviceBenefits = [
 ];
 
 function parseSort(value: string | null): ProductSort {
-  if (value === "priceAsc" || value === "priceDesc") {
+  if (value === "newest" || value === "priceAsc" || value === "priceDesc" || value === "discountDesc") {
     return value;
   }
 
@@ -65,12 +69,18 @@ function parseSort(value: string | null): ProductSort {
 function parseQuery(params: URLSearchParams): ProductQuery {
   const rawPage = Number(params.get("page") ?? "0");
   const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
+  const rawPageSize = Number(params.get("pageSize") ?? "8");
+  const pageSize = Number.isFinite(rawPageSize) ? Math.min(Math.max(Math.floor(rawPageSize), 4), 40) : 8;
 
   return {
     keyword: (params.get("keyword") ?? "").trim(),
     categoryId: params.get("categoryId") ?? "",
+    brandId: params.get("brandId") ?? "",
+    promoOnly: (params.get("promoOnly") ?? "") === "1",
+    inStockOnly: (params.get("inStockOnly") ?? "") === "1",
     sort: parseSort(params.get("sort")),
-    page
+    page,
+    pageSize
   };
 }
 
@@ -85,12 +95,28 @@ function toSearchParams(query: ProductQuery): URLSearchParams {
     params.set("categoryId", query.categoryId);
   }
 
+  if (query.brandId) {
+    params.set("brandId", query.brandId);
+  }
+
+  if (query.promoOnly) {
+    params.set("promoOnly", "1");
+  }
+
+  if (query.inStockOnly) {
+    params.set("inStockOnly", "1");
+  }
+
   if (query.sort !== "default") {
     params.set("sort", query.sort);
   }
 
   if (query.page > 0) {
     params.set("page", String(query.page));
+  }
+
+  if (query.pageSize !== 8) {
+    params.set("pageSize", String(query.pageSize));
   }
 
   return params;
@@ -101,12 +127,26 @@ function imageOf(product: Product | undefined, fallback: string) {
   return image ? image : fallback;
 }
 
+function isOutOfStock(product: Product) {
+  const status = (product.status ?? "").trim().toUpperCase();
+  if (status && status !== "ACTIVE") return true;
+  return product.quantity <= 0;
+}
+
+function promoPercent(product: Product) {
+  const discount = product.discountPrice ?? 0;
+  if (!discount || discount <= 0) return null;
+  if (discount >= product.price) return null;
+  return Math.round(((product.price - discount) / product.price) * 100);
+}
+
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = useMemo(() => parseQuery(searchParams), [searchParams]);
 
   const [keywordInput, setKeywordInput] = useState(query.keyword);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [productPage, setProductPage] = useState<ProductPageResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +197,19 @@ export function ProductsPage() {
     };
 
     void loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const items = await getBrands();
+        setBrands(items);
+      } catch {
+        setBrands([]);
+      }
+    };
+
+    void loadBrands();
   }, []);
 
   useEffect(() => {
@@ -284,8 +337,6 @@ export function ProductsPage() {
       }
     }
   };
-
-  const getPromoPercent = (productId: number) => 8 + ((productId * 13) % 18);
 
   const buildCategoryHref = (categoryId: string) => {
     const params = toSearchParams({
@@ -530,11 +581,61 @@ export function ProductsPage() {
             ))}
           </select>
 
+          <select value={query.brandId} onChange={(event) => updateQuery({ brandId: event.target.value, page: 0 })}>
+            <option value="">Tất cả thương hiệu</option>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+
           <select value={query.sort} onChange={(event) => updateQuery({ sort: parseSort(event.target.value), page: 0 })}>
             <option value="default">Mặc định</option>
+            <option value="newest">Mới nhất</option>
+            <option value="discountDesc">Khuyến mãi tốt</option>
             <option value="priceAsc">Giá: thấp đến cao</option>
             <option value="priceDesc">Giá: cao đến thấp</option>
           </select>
+
+          <select
+            value={String(query.pageSize)}
+            onChange={(event) => updateQuery({ pageSize: Number(event.target.value) || 8, page: 0 })}
+          >
+            {[8, 12, 16, 24].map((size) => (
+              <option key={size} value={size}>
+                {size}/trang
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="chip-row c-home-chip-row" style={{ justifyContent: "space-between" }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className={!query.promoOnly ? "chip" : "chip active"}
+              onClick={() => updateQuery({ promoOnly: !query.promoOnly, page: 0 })}
+            >
+              Khuyến mãi
+            </button>
+            <button
+              type="button"
+              className={!query.inStockOnly ? "chip" : "chip active"}
+              onClick={() => updateQuery({ inStockOnly: !query.inStockOnly, page: 0 })}
+            >
+              Còn hàng
+            </button>
+          </div>
+          <button
+            type="button"
+            className="chip"
+            onClick={() =>
+              updateQuery({ keyword: "", categoryId: "", brandId: "", promoOnly: false, inStockOnly: false, sort: "default", page: 0 })
+            }
+          >
+            Xóa bộ lọc
+          </button>
         </div>
 
         {topCategories.length ? (
@@ -570,37 +671,58 @@ export function ProductsPage() {
         ) : (
           <>
             <div className="c-home-product-grid">
-              {products.map((product) => (
-                <article key={product.id} className="c-home-product-card js-reveal">
-                  <div className="c-home-product-media">
-                    <span className="c-home-promo-badge">-{getPromoPercent(product.id)}%</span>
-                    <img src={imageOf(product, heroVisuals[product.id % heroVisuals.length])} alt={product.name} />
-                  </div>
+              {products.map((product) => {
+                const percent = promoPercent(product);
+                const salePrice = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : null;
+                const out = isOutOfStock(product);
+                const href = product.slug ? `/products/${product.slug}` : "/products";
 
-                  <div className="c-home-product-meta">
-                    <h3>{product.name}</h3>
-                    <p>{product.categoryName ?? "Chưa phân loại"}</p>
-                    <strong>{moneyFormatter.format(product.price)}</strong>
-                  </div>
+                return (
+                  <article key={product.id} className="c-home-product-card js-reveal">
+                    <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
+                      {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
+                      {!out && percent ? <span className="c-home-promo-badge">-{percent}%</span> : null}
+                      <img src={imageOf(product, heroVisuals[product.id % heroVisuals.length])} alt={product.name} />
+                    </Link>
 
-                  <div className="card-actions c-home-card-actions">
-                    <input
-                      type="number"
-                      min={1}
-                      value={quantityByProduct[product.id] ?? 1}
-                      onChange={(event) =>
-                        setQuantityByProduct((prev) => ({
-                          ...prev,
-                          [product.id]: Number(event.target.value)
-                        }))
-                      }
-                    />
-                    <button type="button" onClick={() => void handleAddToCart(product.id)}>
-                      Thêm vào giỏ
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    <div className="c-home-product-meta">
+                      <h3>
+                        <Link to={href}>{product.name}</Link>
+                      </h3>
+                      <p>
+                        {(product.brandName ? `${product.brandName} • ` : "") + (product.categoryName ?? "Chưa phân loại")}
+                      </p>
+
+                      {salePrice ? (
+                        <div>
+                          <strong>{moneyFormatter.format(salePrice)}</strong>{" "}
+                          <span style={{ textDecoration: "line-through", opacity: 0.7 }}>{moneyFormatter.format(product.price)}</span>
+                        </div>
+                      ) : (
+                        <strong>{moneyFormatter.format(product.price)}</strong>
+                      )}
+                    </div>
+
+                    <div className="card-actions c-home-card-actions">
+                      <input
+                        type="number"
+                        min={1}
+                        disabled={out}
+                        value={quantityByProduct[product.id] ?? 1}
+                        onChange={(event) =>
+                          setQuantityByProduct((prev) => ({
+                            ...prev,
+                            [product.id]: Number(event.target.value)
+                          }))
+                        }
+                      />
+                      <button type="button" disabled={out} onClick={() => void handleAddToCart(product.id)}>
+                        {out ? "Hết hàng" : "Thêm vào giỏ"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
             {!products.length ? <p className="empty-message">Không có sản phẩm phù hợp với bộ lọc hiện tại.</p> : null}

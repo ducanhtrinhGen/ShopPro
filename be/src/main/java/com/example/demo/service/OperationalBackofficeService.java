@@ -97,9 +97,14 @@ public class OperationalBackofficeService {
         if (order == null) {
             return null;
         }
+        String currentStatus = normalizeOrderStatus(order.getOrderStatus(), "PENDING");
         String nextStatus = staffActor
                 ? normalizeOrderStatusForStaffUpdate(status)
                 : normalizeOrderStatusForAdminUpdate(status);
+
+        if (!isAllowedTransition(currentStatus, nextStatus, staffActor)) {
+            throw new IllegalArgumentException("Khong the chuyen trang thai tu " + currentStatus + " sang " + nextStatus + ".");
+        }
         order.setOrderStatus(nextStatus);
         Order updated = orderRepository.save(order);
         return toOrderDetailResponse(updated);
@@ -278,6 +283,32 @@ public class OperationalBackofficeService {
                     "Staff chi duoc dat trang thai van hanh: " + String.join(", ", STAFF_ALLOWED_ORDER_STATUSES));
         }
         return normalized;
+    }
+
+    private boolean isAllowedTransition(String current, String next, boolean staffActor) {
+        if (current.equals(next)) {
+            return true;
+        }
+
+        // Terminal states.
+        if ("COMPLETED".equals(current) || "CANCELLED".equals(current) || "REFUNDED".equals(current)) {
+            return false;
+        }
+
+        // Staff cannot set FAILED/REFUNDED by normalization; keep a guard anyway.
+        if (staffActor && ("FAILED".equals(next) || "REFUNDED".equals(next))) {
+            return false;
+        }
+
+        return switch (current) {
+            case "PENDING" -> Set.of("CONFIRMED", "CANCELLED").contains(next);
+            case "CONFIRMED" -> Set.of("PROCESSING", "CANCELLED").contains(next);
+            case "PROCESSING" -> Set.of("SHIPPING", "CANCELLED", "FAILED").contains(next);
+            case "SHIPPING" -> Set.of("DELIVERED", "FAILED").contains(next);
+            case "DELIVERED" -> Set.of("COMPLETED").contains(next);
+            case "FAILED" -> staffActor ? false : Set.of("REFUNDED").contains(next);
+            default -> false;
+        };
     }
 
     private boolean isBlank(String value) {

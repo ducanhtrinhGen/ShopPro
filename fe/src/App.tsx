@@ -13,6 +13,11 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { StaffDashboardPage } from "./pages/StaffDashboardPage";
 import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { ProductDetailPage } from "./pages/ProductDetailPage";
+import { BlogListPage } from "./pages/BlogListPage";
+import { BlogPostPage } from "./pages/BlogPostPage";
+import { ContactPage } from "./pages/ContactPage";
+import { WishlistPage } from "./pages/WishlistPage";
 
 export function App() {
   return (
@@ -23,6 +28,10 @@ export function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<ProductsPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products/:slug" element={<ProductDetailPage />} />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
         <Route path="/owner-staff" element={<LegacyHubRedirect />} />
 
@@ -33,6 +42,7 @@ export function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/orders" element={<MyOrdersPage />} />
             <Route path="/orders/:id" element={<OrderPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["ROLE_OWNER", "ROLE_ADMIN"]} />}>

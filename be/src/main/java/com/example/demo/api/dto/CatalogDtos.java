@@ -10,13 +10,42 @@ public final class CatalogDtos {
     public record CategoryItem(int id, String name) {
     }
 
+    public record BrandItem(int id, String name) {
+    }
+
     public record ProductItem(
             int id,
             String name,
             long price,
+            Long discountPrice,
             String imageUrl,
+            String thumbnailUrl,
+            String slug,
+            int quantity,
+            String status,
             Integer categoryId,
-            String categoryName) {
+            String categoryName,
+            Integer brandId,
+            String brandName) {
+    }
+
+    public record ProductDetailResponse(
+            int id,
+            String name,
+            String slug,
+            long price,
+            Long discountPrice,
+            int quantity,
+            String status,
+            String imageUrl,
+            String thumbnailUrl,
+            Integer categoryId,
+            String categoryName,
+            Integer brandId,
+            String brandName,
+            String shortDescription,
+            String description,
+            String specifications) {
     }
 
     public record ProductPageResponse(

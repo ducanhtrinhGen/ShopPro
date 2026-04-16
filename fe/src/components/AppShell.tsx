@@ -64,9 +64,9 @@ const footerColumns: FooterColumn[] = [
     title: "SHOPPRO",
     links: [
       { label: "Giới thiệu", href: "/products?about=1" },
-      { label: "Liên hệ", href: "/products?contact=1" },
+      { label: "Liên hệ", href: "/contact" },
       { label: "Tuyển dụng", href: "/products?career=1" },
-      { label: "Blog", href: "/products?blog=1" },
+      { label: "Blog", href: "/blog" },
       { label: "Cửa hàng", href: "/products" }
     ]
   },
@@ -147,6 +147,14 @@ function IconCart(props: IconProps) {
       <path d="M3 4h2l2.2 10.2a1 1 0 0 0 1 .8h9.7a1 1 0 0 0 1-.8L21 7H7" />
       <circle cx="10" cy="20" r="1.7" />
       <circle cx="18" cy="20" r="1.7" />
+    </IconBase>
+  );
+}
+
+function IconHeart(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M20.6 8.1c0 4.9-8.6 10.6-8.6 10.6S3.4 13 3.4 8.1c0-2.4 1.9-4.3 4.3-4.3 1.6 0 3 .8 3.7 2.1.7-1.3 2.2-2.1 3.7-2.1 2.4 0 4.3 1.9 4.3 4.3z" />
     </IconBase>
   );
 }
@@ -348,6 +356,12 @@ export function AppShell() {
           label: "Thông tin tài khoản",
           to: "/profile",
           icon: <IconUser className="corsair-icon" />
+        },
+        {
+          key: "wishlist",
+          label: "Wishlist",
+          to: "/wishlist",
+          icon: <IconHeart className="corsair-icon" />
         },
         {
           key: "my-orders",

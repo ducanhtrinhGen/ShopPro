@@ -20,18 +20,30 @@ public class CartService {
             return;
         }
 
+        if (!isPurchasable(product)) {
+            throw new IllegalStateException("Sản phẩm hiện không thể mua.");
+        }
+
+        if (product.getQuantity() <= 0) {
+            throw new IllegalStateException("Sản phẩm đã hết hàng.");
+        }
+
+        long unitPrice = resolveEffectiveUnitPrice(product);
         Map<Integer, CartItem> cart = getCart(session);
         CartItem existingItem = cart.get(product.getId());
 
         if (existingItem == null) {
+            int requested = Math.max(quantity, 1);
             cart.put(product.getId(), new CartItem(
                     product.getId(),
                     product.getName(),
-                    product.getPrice(),
+                    unitPrice,
                     product.getImage(),
-                    Math.max(quantity, 1)));
+                    requested));
         } else {
-            existingItem.setQuantity(existingItem.getQuantity() + Math.max(quantity, 1));
+            int requested = existingItem.getQuantity() + Math.max(quantity, 1);
+            existingItem.setPrice(unitPrice);
+            existingItem.setQuantity(requested);
         }
     }
 
@@ -85,5 +97,18 @@ public class CartService {
         Map<Integer, CartItem> newCart = new LinkedHashMap<>();
         session.setAttribute(CART_SESSION_KEY, newCart);
         return newCart;
+    }
+
+    private boolean isPurchasable(Product product) {
+        String status = product.getStatus() == null ? "" : product.getStatus().trim().toUpperCase();
+        return status.isEmpty() || "ACTIVE".equals(status);
+    }
+
+    private long resolveEffectiveUnitPrice(Product product) {
+        Long discount = product.getDiscountPrice();
+        if (discount != null && discount > 0 && discount < product.getPrice()) {
+            return discount;
+        }
+        return product.getPrice();
     }
 }

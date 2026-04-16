@@ -18,13 +18,111 @@ export type Category = {
   name: string;
 };
 
+export type Brand = {
+  id: number;
+  name: string;
+};
+
+export type WishlistItem = {
+  productId: number;
+  name: string;
+  slug: string | null;
+  price: number;
+  discountPrice: number | null;
+  quantity: number;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  brandId: number | null;
+  brandName: string | null;
+};
+
+export type WishlistToggleResponse = {
+  wished: boolean;
+};
+
+export type ReviewItem = {
+  id: number;
+  productId: number;
+  username: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
+export type ReviewSummaryResponse = {
+  productId: number;
+  totalReviews: number;
+  averageRating: number;
+  canReview: boolean;
+  myReview: ReviewItem | null;
+  reviews: ReviewItem[];
+};
+
+export type BlogPostSummary = {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  summary: string | null;
+  createdAt: string;
+};
+
+export type BlogPostDetail = {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  summary: string | null;
+  content: string;
+  createdAt: string;
+};
+
+export type ContactMessageCreateRequest = {
+  fullName: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+
+export type ContactMessageCreateResponse = {
+  created: boolean;
+};
+
 export type Product = {
   id: number;
   name: string;
   price: number;
+  discountPrice: number | null;
   imageUrl: string | null;
+  thumbnailUrl: string | null;
+  slug: string | null;
+  quantity: number;
+  status: string | null;
   categoryId: number | null;
   categoryName: string | null;
+  brandId: number | null;
+  brandName: string | null;
+};
+
+export type ProductDetail = {
+  id: number;
+  name: string;
+  slug: string | null;
+  price: number;
+  discountPrice: number | null;
+  quantity: number;
+  status: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  brandId: number | null;
+  brandName: string | null;
+  shortDescription: string | null;
+  description: string | null;
+  specifications: string | null;
 };
 
 export type ProductPageResponse = {

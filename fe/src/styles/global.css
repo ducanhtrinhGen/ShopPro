@@ -3909,6 +3909,44 @@ select {
   padding: 14px;
 }
 
+.c-product-detail-wish {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.c-blog-feature {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 18px;
+  padding: 18px;
+  margin-top: 14px;
+}
+
+.c-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.c-blog-card {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+@media (max-width: 980px) {
+  .c-blog-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1260px) {
   .owner-crm-shell {
     grid-template-columns: 220px minmax(0, 1fr);

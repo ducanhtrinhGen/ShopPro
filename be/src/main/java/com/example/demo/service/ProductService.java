@@ -11,15 +11,24 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
 
-    public Page<Product> getProducts(String keyword, Integer categoryId, String sort, int page, int pageSize) {
+    public Page<Product> getProducts(String keyword,
+            Integer categoryId,
+            Integer brandId,
+            Boolean promoOnly,
+            Boolean inStockOnly,
+            String sort,
+            int page,
+            int pageSize) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), pageSize, buildSort(sort));
-        Specification<Product> specification = buildSpecification(keyword, categoryId);
+        Specification<Product> specification = buildSpecification(keyword, categoryId, brandId, promoOnly, inStockOnly);
         return productRepository.findAll(specification, pageable);
     }
 
@@ -31,17 +40,28 @@ public class ProductService {
         return productRepository.findById(id).orElse(null);
     }
 
+    public Product getProductBySlug(String slug) {
+        if (slug == null || slug.isBlank()) {
+            return null;
+        }
+        return productRepository.findBySlug(slug.trim()).orElse(null);
+    }
+
     public void deleteProduct(int id) {
         productRepository.deleteById(id);
     }
 
-    private Specification<Product> buildSpecification(String keyword, Integer categoryId) {
+    private Specification<Product> buildSpecification(String keyword,
+            Integer categoryId,
+            Integer brandId,
+            Boolean promoOnly,
+            Boolean inStockOnly) {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
 
             if (keyword != null && !keyword.isBlank()) {
-                predicate = cb.and(predicate,
-                        cb.like(cb.lower(root.get("name")), "%" + keyword.trim().toLowerCase() + "%"));
+                String normalizedKeyword = keyword.trim().toLowerCase(Locale.ROOT);
+                predicate = cb.and(predicate, cb.like(cb.lower(root.get("name")), "%" + normalizedKeyword + "%"));
             }
 
             if (categoryId != null) {
@@ -49,11 +69,29 @@ public class ProductService {
                         cb.equal(root.get("category").get("id"), categoryId));
             }
 
+            if (brandId != null) {
+                predicate = cb.and(predicate, cb.equal(root.get("brand").get("id"), brandId));
+            }
+
+            boolean promo = promoOnly != null && promoOnly;
+            if (promo) {
+                predicate = cb.and(predicate,
+                        cb.isNotNull(root.get("discountPrice")),
+                        cb.greaterThan(root.get("discountPrice"), 0L),
+                        cb.lessThan(root.get("discountPrice"), root.get("price")));
+            }
+
+            boolean inStock = inStockOnly != null && inStockOnly;
+            if (inStock) {
+                predicate = cb.and(predicate, cb.greaterThan(root.get("quantity"), 0));
+            }
+
             return predicate;
         };
     }
 
     private Sort buildSort(String sort) {
+        String normalized = sort == null ? "" : sort.trim();
         if ("priceAsc".equals(sort)) {
             return Sort.by("price").ascending().and(Sort.by("id").ascending());
         }
@@ -62,6 +100,16 @@ public class ProductService {
             return Sort.by("price").descending().and(Sort.by("id").ascending());
         }
 
-        return Sort.by("id").ascending();
+        if ("newest".equals(normalized)) {
+            return Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
+        }
+
+        if ("discountDesc".equals(normalized)) {
+            // Promotion first: higher (price - discountPrice) then newest.
+            return Sort.by(Sort.Direction.DESC, "discountPrice").and(Sort.by(Sort.Direction.DESC, "createdAt"));
+        }
+
+        // default
+        return Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
     }
 }

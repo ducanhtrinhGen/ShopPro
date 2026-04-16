@@ -57,21 +57,40 @@ public class OrderService {
 
         long totalAmount = 0L;
         for (CartItem cartItem : cartItems) {
-            Product product = productRepository.findById(cartItem.getProductId()).orElse(null);
+            Product product = productRepository.findByIdForUpdate(cartItem.getProductId()).orElse(null);
             if (product == null) {
                 continue;
             }
 
+            if (!isPurchasable(product)) {
+                throw new IllegalStateException("Sản phẩm không còn bán: " + product.getName());
+            }
+
+            int requestedQty = Math.max(cartItem.getQuantity(), 1);
+            if (product.getQuantity() <= 0) {
+                throw new IllegalStateException("Sản phẩm đã hết hàng: " + product.getName());
+            }
+            if (requestedQty > product.getQuantity()) {
+                throw new IllegalStateException("Tồn kho không đủ cho sản phẩm: " + product.getName()
+                        + ". Còn " + product.getQuantity() + ", bạn chọn " + requestedQty + ".");
+            }
+
+            long unitPrice = resolveEffectiveUnitPrice(product);
+            long subtotal = unitPrice * (long) requestedQty;
+
+            // Deduct stock (simple reservation at checkout time).
+            product.setQuantity(product.getQuantity() - requestedQty);
+            productRepository.save(product);
+
             OrderDetail detail = new OrderDetail();
             detail.setProduct(product);
-            detail.setProductName(cartItem.getProductName());
-            detail.setUnitPrice(cartItem.getPrice());
-            detail.setPrice(cartItem.getPrice());
-            detail.setQuantity(cartItem.getQuantity());
-            detail.setSubtotal(cartItem.getSubtotal());
+            detail.setProductName(product.getName());
+            detail.setUnitPrice(unitPrice);
+            detail.setQuantity(requestedQty);
+            detail.setSubtotal(subtotal);
             order.addOrderDetail(detail);
 
-            totalAmount += cartItem.getSubtotal();
+            totalAmount += subtotal;
         }
 
         if (order.getOrderDetails().isEmpty()) {
@@ -82,5 +101,18 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         cartService.clearCart(session);
         return savedOrder;
+    }
+
+    private boolean isPurchasable(Product product) {
+        String status = product.getStatus() == null ? "" : product.getStatus().trim().toUpperCase();
+        return status.isEmpty() || "ACTIVE".equals(status);
+    }
+
+    private long resolveEffectiveUnitPrice(Product product) {
+        Long discount = product.getDiscountPrice();
+        if (discount != null && discount > 0 && discount < product.getPrice()) {
+            return discount;
+        }
+        return product.getPrice();
     }
 }

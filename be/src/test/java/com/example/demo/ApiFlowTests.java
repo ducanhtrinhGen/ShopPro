@@ -42,6 +42,7 @@ class ApiFlowTests {
         Product product = new Product();
         product.setName("API Smoke Product");
         product.setPrice(1000L);
+        product.setQuantity(10);
         product = productRepository.save(product);
 
         String buyer = "buyer_" + System.currentTimeMillis();
@@ -77,6 +78,43 @@ class ApiFlowTests {
         mockMvc.perform(post("/api/cart/checkout").session(session))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").isNumber());
+    }
+
+    @Test
+    void checkoutShouldRejectWhenStockIsInsufficient() throws Exception {
+        Product product = new Product();
+        product.setName("Low Stock Product");
+        product.setPrice(2000L);
+        product.setQuantity(1);
+        product = productRepository.save(product);
+
+        String buyer = "buyer_stock_" + System.currentTimeMillis();
+        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "%s",
+                                  "password": "buyer123"
+                                }
+                                """.formatted(buyer)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+
+        mockMvc.perform(post("/api/cart/items").session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "productId": %d,
+                                  "quantity": 2
+                                }
+                                """.formatted(product.getId())))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/cart/checkout").session(session))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Tồn kho")));
     }
 
     @Test
@@ -260,6 +298,7 @@ class ApiFlowTests {
         Product product = new Product();
         product.setName("Staff Cart Product");
         product.setPrice(500L);
+        product.setQuantity(10);
         product = productRepository.save(product);
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
@@ -291,6 +330,7 @@ class ApiFlowTests {
         Product product = new Product();
         product.setName("Customer Order Product");
         product.setPrice(900L);
+        product.setQuantity(10);
         product = productRepository.save(product);
 
         String buyerA = "buyerA_" + System.currentTimeMillis();

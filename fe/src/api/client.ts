@@ -10,6 +10,7 @@
 
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
+  skipUnauthorizedHandler?: boolean;
 };
 
 type UnauthorizedHandler = () => void;
@@ -63,22 +64,23 @@ export function withApiBaseUrl(path: string): string {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const hasBody = options.body !== undefined;
   const headers = new Headers(options.headers ?? {});
+  const { skipUnauthorizedHandler = false, ...requestOptions } = options;
 
   if (hasBody && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
   const response = await fetch(withApiBaseUrl(path), {
-    method: options.method ?? "GET",
+    method: requestOptions.method ?? "GET",
     credentials: "include",
     headers,
-    body: hasBody ? JSON.stringify(options.body) : undefined
+    body: hasBody ? JSON.stringify(requestOptions.body) : undefined
   });
 
   const rawBody = await response.text();
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && !skipUnauthorizedHandler) {
       unauthorizedHandler?.();
     }
 

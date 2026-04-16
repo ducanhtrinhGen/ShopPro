@@ -21,6 +21,22 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const PUBLIC_ROUTES = new Set([
+  "/",
+  "/products",
+  "/categories",
+  "/login",
+  "/register"
+]);
+
+function isPublicRoute(pathname: string) {
+  if (PUBLIC_ROUTES.has(pathname)) {
+    return true;
+  }
+
+  return pathname.startsWith("/products/");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
 
       const pathname = window.location.pathname;
-      if (pathname === "/login" || pathname === "/register") {
+      if (isPublicRoute(pathname)) {
         return;
       }
 
@@ -45,11 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const me = await apiRequest<AuthUser>("/api/auth/me");
+      const me = await apiRequest<AuthUser>("/api/auth/me", {
+        skipUnauthorizedHandler: true
+      });
       setUser(me);
     } catch (error) {
       if (error instanceof ApiRequestError && error.status === 401) {
         setUser(null);
+        if (!isPublicRoute(window.location.pathname)) {
+          const pathname = window.location.pathname;
+          const redirect = pathname ? `?from=${encodeURIComponent(pathname)}` : "";
+          window.location.assign(`/login${redirect}`);
+        }
         return;
       }
 

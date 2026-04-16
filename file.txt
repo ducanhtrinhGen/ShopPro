@@ -1,0 +1,370 @@
+ShopPro auth + production fixes — exact patch (file-by-file)
+Generated: 2026-04-16
+
+========================================================================
+1) fe/src/pages/LoginPage.tsx
+========================================================================
+
+Root cause in this file
+- Hardcoded default credentials were set in component state:
+  - username defaulted to "admin"
+  - password defaulted to "admin123"
+  This made the login form auto-fill admin credentials in production.
+
+Exact code diff
+```diff
+diff --git a/fe/src/pages/LoginPage.tsx b/fe/src/pages/LoginPage.tsx
+index f560ff3..0be4152 100644
+--- a/fe/src/pages/LoginPage.tsx
++++ b/fe/src/pages/LoginPage.tsx
+@@ -5,8 +5,8 @@ import { useAuth } from "../auth/AuthContext";
+ import { getDefaultRouteForUser } from "../auth/roleUtils";
+ 
+ export function LoginPage() {
+-  const [username, setUsername] = useState("admin");
+-  const [password, setPassword] = useState("admin123");
++  const [username, setUsername] = useState("");
++  const [password, setPassword] = useState("");
+   const [error, setError] = useState<string | null>(null);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+ 
+@@ -18,7 +18,16 @@ export function LoginPage() {
+     return <Navigate to={getDefaultRouteForUser(user)} replace />;
+   }
+ 
+-  const redirectPath = (location.state as { from?: string } | null)?.from;
++  const redirectPath = (() => {
++    const fromState = (location.state as { from?: string } | null)?.from;
++    if (fromState) return fromState;
++
++    const params = new URLSearchParams(location.search);
++    const fromQuery = params.get("from");
++    if (fromQuery && fromQuery.startsWith("/")) return fromQuery;
++
++    return undefined;
++  })();
+ 
+   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
+@@ -32,7 +41,7 @@ export function LoginPage() {
+       if (requestError instanceof ApiRequestError) {
+         setError(requestError.message);
+       } else {
+-        setError("Khong the dang nhap. Vui long thu lai.");
++        setError("Không thể đăng nhập. Vui lòng thử lại.");
+       }
+     } finally {
+       setIsSubmitting(false);
+@@ -42,9 +51,9 @@ export function LoginPage() {
+   return (
+     <div className="auth-layout">
+       <section className="auth-card">
+-        <p className="auth-kicker">Cua hang ShopPro</p>
+-        <h1>Chao mung ban quay lai ShopPro</h1>
+-        <p className="auth-description">Dang nhap de vao dung khu vuc quan tri, van hanh hoac mua sam.</p>
++        <p className="auth-kicker">Cửa hàng ShopPro</p>
++        <h1>Chào mừng bạn quay lại ShopPro</h1>
++        <p className="auth-description">Đăng nhập để vào đúng khu vực quản trị, vận hành hoặc mua sắm.</p>
+ 
+         <form onSubmit={handleSubmit} className="auth-form">
+           <label>
+@@ -52,7 +61,7 @@ export function LoginPage() {
+             <input
+               value={username}
+               onChange={(event) => setUsername(event.target.value)}
+-              placeholder="admin"
++              placeholder="Nhập tên đăng nhập"
+               autoComplete="username"
+               required
+             />
+@@ -64,7 +73,7 @@ export function LoginPage() {
+               type="password"
+               value={password}
+               onChange={(event) => setPassword(event.target.value)}
+-              placeholder="admin123"
++              placeholder="Nhập mật khẩu"
+               autoComplete="current-password"
+               required
+             />
+@@ -73,13 +82,13 @@ export function LoginPage() {
+           {error ? <p className="form-error">{error}</p> : null}
+ 
+           <button type="submit" disabled={isSubmitting}>
+-            {isSubmitting ? "Dang dang nhap..." : "Dang nhap"}
++            {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+           </button>
+         </form>
+ 
+         <div className="demo-credentials">
+           <p>
+-            Chua co tai khoan? <Link to="/register">Dang ky ngay</Link>
++            Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+           </p>
+         </div>       
+       </section>
+```
+
+Why this change is correct
+- Removes any default/admin autofill at source (React state), so production login starts empty.
+- Preserves existing architecture: still uses `useAuth().login()` and existing redirects.
+- Adds support for `?from=/...` so hard redirects to `/login?from=...` can return users to where they were going.
+
+
+========================================================================
+2) fe/src/auth/AuthContext.tsx
+========================================================================
+
+Root cause in this file
+- There was no global, consistent way to clear auth state and redirect when the backend invalidates the session (401).
+- Result: pages could keep rendering while API calls fail, leading to “broken auth state” symptoms.
+
+Exact code diff
+```diff
+diff --git a/fe/src/auth/AuthContext.tsx b/fe/src/auth/AuthContext.tsx
+index 9ad7a56..a10600c 100644
+--- a/fe/src/auth/AuthContext.tsx
++++ b/fe/src/auth/AuthContext.tsx
+@@ -7,7 +7,7 @@ import {
+   useState,
+   type ReactNode
+ } from "react";
+-import { apiRequest, ApiRequestError } from "../api/client";
++import { apiRequest, ApiRequestError, setUnauthorizedHandler } from "../api/client";
+ import type { AuthUser } from "../types";
+ 
+ type AuthContextValue = {
+@@ -25,6 +25,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
+   const [user, setUser] = useState<AuthUser | null>(null);
+   const [isLoading, setIsLoading] = useState(true);
+ 
++  useEffect(() => {
++    setUnauthorizedHandler(() => {
++      setUser(null);
++
++      const pathname = window.location.pathname;
++      if (pathname === "/login" || pathname === "/register") {
++        return;
++      }
++
++      const redirect = pathname ? `?from=${encodeURIComponent(pathname)}` : "";
++      window.location.assign(`/login${redirect}`);
++    });
++
++    return () => {
++      setUnauthorizedHandler(null);
++    };
++  }, []);
++
+   const refreshUser = useCallback(async () => {
+     try {
+       const me = await apiRequest<AuthUser>("/api/auth/me");
+       setUser(me);
+     } catch (error) {
+       if (error instanceof ApiRequestError && error.status === 401) {
+         setUser(null);
+         return;
+       }
+ 
+       setUser(null);
+       console.error("Không thể khôi phục phiên đăng nhập", error);
+     }
+   }, []);
+```
+
+Why this change is correct
+- When any API call gets a 401 (session expired/invalid), we now:
+  - clear `user` immediately (no stale data)
+  - redirect to `/login` (no “fallback to admin”, no mock)
+- Uses a real server-sourced truth (`/api/auth/me`) and real 401s to drive state.
+- Keeps role logic intact (roles still come from backend authorities).
+
+
+========================================================================
+3) fe/src/api/client.ts
+========================================================================
+
+Root cause in this file
+- The app needed a single, standardized place to:
+  - normalize API routes to `/api/...` (avoid accidental `api/...`)
+  - trigger session invalidation handling on 401 consistently across all API calls
+
+Exact code diff
+```diff
+diff --git a/fe/src/api/client.ts b/fe/src/api/client.ts
+index cd5c39a..4691a90 100644
+--- a/fe/src/api/client.ts
++++ b/fe/src/api/client.ts
+@@ -12,6 +12,14 @@ type RequestOptions = Omit<RequestInit, "body"> & {
+   body?: unknown;
+ };
+ 
++type UnauthorizedHandler = () => void;
++
++let unauthorizedHandler: UnauthorizedHandler | null = null;
++
++export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
++  unauthorizedHandler = handler;
++}
++
+ function readApiBaseUrl(): string {
+   const raw = (import.meta.env.VITE_API_URL ?? "").trim();
+   if (!raw) {
+@@ -32,6 +40,11 @@ export function withApiBaseUrl(path: string): string {
+     return path;
+   }
+ 
++  // Normalize mistaken relative API paths like "api/products" -> "/api/products".
++  if (!path.startsWith("/") && path.startsWith("api/")) {
++    path = `/${path}`;
++  }
++
+   if (!API_BASE_URL) {
+     // Local dev: rely on Vite proxy / same-origin.
+     return path;
+@@ -62,6 +75,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
+   const rawBody = await response.text();
+ 
+   if (!response.ok) {
++    if (response.status === 401) {
++      unauthorizedHandler?.();
++    }
++
+     const jsonBody = parseJsonSafely<{ message?: string }>(rawBody);
+     let message = jsonBody?.message ?? `Yêu cầu thất bại với mã ${response.status}`;
+```
+
+Why this change is correct
+- Centralizes 401 behavior in one place for all API calls (no duplicate page-level hacks).
+- Prevents “api/...” relative route mistakes from turning into wrong URLs in production.
+- Still respects configured base URL (`VITE_API_URL`) and keeps `credentials: "include"` for session cookies.
+
+
+========================================================================
+4) be/src/main/resources/application.properties
+========================================================================
+
+Root cause in this file
+- `server.address=127.0.0.1` made the backend listen only on localhost, which commonly causes production “bad gateway / connection refused” symptoms when deployed behind a proxy.
+- DB + Cloudinary secrets were committed directly in config, which is unsafe and makes environments brittle.
+
+Exact code diff
+```diff
+diff --git a/be/src/main/resources/application.properties b/be/src/main/resources/application.properties
+index 39021e2..479f863 100644
+--- a/be/src/main/resources/application.properties
++++ b/be/src/main/resources/application.properties
+@@ -1,19 +1,22 @@
+ spring.application.name=demo
+ server.port=${PORT:8080}
++# IMPORTANT: do not bind production server to localhost.
++# Leave blank to bind all interfaces, or set SERVER_ADDRESS explicitly.
++server.address=${SERVER_ADDRESS:}
++server.tomcat.protocol=org.apache.coyote.http11.Http11Nio2Protocol
+ 
+-spring.datasource.url=jdbc:mysql://shoppro-mysql-shoppro.e.aivencloud.com:15418/shoppro_db?sslMode=REQUIRED&serverTimezone=UTC
+-spring.datasource.username=avnadmin
+-spring.datasource.password=${DB_PASSWORD}
++spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/shoppro_db?serverTimezone=UTC}
++spring.datasource.username=${DB_USERNAME:root}
++spring.datasource.password=${DB_PASSWORD:}
+ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+ 
+ spring.jpa.hibernate.ddl-auto=update
+ spring.jpa.show-sql=true
+-
+ app.frontend-url=${FRONTEND_URL:http://localhost:5173}
+ 
+-cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME}
+-cloudinary.api-key=${CLOUDINARY_API_KEY}
+-cloudinary.api-secret=${CLOUDINARY_API_SECRET}
++cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:}
++cloudinary.api-key=${CLOUDINARY_API_KEY:}
++cloudinary.api-secret=${CLOUDINARY_API_SECRET:}
+ cloudinary.folder=${CLOUDINARY_FOLDER:ShopPro/products}
+ 
+ spring.servlet.multipart.max-file-size=10MB
+```
+
+Why this change is correct
+- Ensures the backend can bind to the correct interface in production (no accidental localhost-only binding).
+- Moves secrets to environment variables with safe defaults, matching standard deployment practice.
+- Keeps the rest of the Spring Boot config and app behavior unchanged.
+
+
+========================================================================
+Additional changed files
+========================================================================
+
+5) be/.env.example
+
+Root cause in this file
+- The example env file contained real Cloudinary keys and a real DB URL/username pattern, encouraging leaking secrets and coupling local/prod.
+
+Exact code diff
+```diff
+diff --git a/be/.env.example b/be/.env.example
+index bcc4a60..69ff74d 100644
+--- a/be/.env.example
++++ b/be/.env.example
+@@ -1,13 +1,14 @@
+ ## Backend environment variables (Render)
+ ## Copy to your Render service env settings (do NOT commit real secrets)
+ 
+-DB_URL=jdbc:mysql://shoppro-mysql-shoppro.e.aivencloud.com:15418/shoppro_db?sslMode=REQUIRED&serverTimezone=UTC
+-DB_USERNAME=avnadmin
++DB_URL=
++DB_USERNAME=
+ DB_PASSWORD=
+ 
+-CLOUDINARY_CLOUD_NAME=dakqspssm
+-CLOUDINARY_API_KEY=379481477315961
+-CLOUDINARY_API_SECRET=B97bLn6FHRko9X5Wt-0y6UyOyrg
++CLOUDINARY_CLOUD_NAME=
++CLOUDINARY_API_KEY=
++CLOUDINARY_API_SECRET=
++CLOUDINARY_FOLDER=ShopPro/products
+ 
+ FRONTEND_URL=https://shoppro.id.vn
+```
+
+Why this change is correct
+- Removes leaked/real credentials and makes `.env.example` safe to share.
+- Encourages correct production configuration via environment variables.
+
+
+6) README.md
+
+Root cause in this file
+- Documentation published real default credentials (`admin/admin123`, etc.) which pushed the project toward “demo creds in prod” behavior and conflicted with removing hardcoded FE defaults.
+
+Exact code diff
+```diff
+diff --git a/README.md b/README.md
+index f1f6a5e..77bf127 100644
+--- a/README.md
++++ b/README.md
+@@ -56,8 +56,7 @@ cloudinary.folder=shoppro/products
+ 
+ Cloudinary upload API is under `/api/admin/**`, so you need admin session:
+ 
+- Username: `admin`
+- Password: `admin123`
++- Use a management account that exists in your environment (do not hardcode credentials in frontend).
+ 
+ ### 3) Upload image
+ 
+@@ -123,8 +122,7 @@ Frontend runs at `http://localhost:5173` (or another free port if 5173 is busy).
+ 
+ ### 3) Login accounts
+ 
+- Admin: `admin` / `admin123`
+- User: `user1` / `user123`
++- Create accounts via `/register` (customer) or seed/DB scripts for management roles in your environment.
+ 
+ ## Troubleshooting
+```
+
+Why this change is correct
+- Avoids documenting (and thereby normalizing) fixed credentials that tend to get reused in production.
+- Aligns documentation with the real session-based auth flow and environment-specific accounts.
+

@@ -56,8 +56,7 @@ cloudinary.folder=shoppro/products
 
 Cloudinary upload API is under `/api/admin/**`, so you need admin session:
 
-- Username: `admin`
-- Password: `admin123`
+- Use a management account that exists in your environment (do not hardcode credentials in frontend).
 
 ### 3) Upload image
 
@@ -123,8 +122,7 @@ Frontend runs at `http://localhost:5173` (or another free port if 5173 is busy).
 
 ### 3) Login accounts
 
-- Admin: `admin` / `admin123`
-- User: `user1` / `user123`
+- Create accounts via `/register` (customer) or seed/DB scripts for management roles in your environment.
 
 ## Troubleshooting
 

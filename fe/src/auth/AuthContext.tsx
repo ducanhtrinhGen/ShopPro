@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode
 } from "react";
-import { apiRequest, ApiRequestError } from "../api/client";
+import { apiRequest, ApiRequestError, setUnauthorizedHandler } from "../api/client";
 import type { AuthUser } from "../types";
 
 type AuthContextValue = {
@@ -24,6 +24,24 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+
+      const pathname = window.location.pathname;
+      if (pathname === "/login" || pathname === "/register") {
+        return;
+      }
+
+      const redirect = pathname ? `?from=${encodeURIComponent(pathname)}` : "";
+      window.location.assign(`/login${redirect}`);
+    });
+
+    return () => {
+      setUnauthorizedHandler(null);
+    };
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {

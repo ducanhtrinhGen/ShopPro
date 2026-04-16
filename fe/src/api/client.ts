@@ -12,6 +12,14 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
 
+type UnauthorizedHandler = () => void;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+  unauthorizedHandler = handler;
+}
+
 function readApiBaseUrl(): string {
   const raw = (import.meta.env.VITE_API_URL ?? "").trim();
   if (!raw) {
@@ -30,6 +38,11 @@ export function withApiBaseUrl(path: string): string {
   // Don't touch absolute URLs (e.g. Cloudinary links, external resources).
   if (/^https?:\/\//i.test(path)) {
     return path;
+  }
+
+  // Normalize mistaken relative API paths like "api/products" -> "/api/products".
+  if (!path.startsWith("/") && path.startsWith("api/")) {
+    path = `/${path}`;
   }
 
   if (!API_BASE_URL) {
@@ -62,6 +75,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const rawBody = await response.text();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      unauthorizedHandler?.();
+    }
+
     const jsonBody = parseJsonSafely<{ message?: string }>(rawBody);
     let message = jsonBody?.message ?? `Yêu cầu thất bại với mã ${response.status}`;
 

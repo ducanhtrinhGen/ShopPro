@@ -5,8 +5,8 @@ import { useAuth } from "../auth/AuthContext";
 import { getDefaultRouteForUser } from "../auth/roleUtils";
 
 export function LoginPage() {
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,7 +18,16 @@ export function LoginPage() {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
 
-  const redirectPath = (location.state as { from?: string } | null)?.from;
+  const redirectPath = (() => {
+    const fromState = (location.state as { from?: string } | null)?.from;
+    if (fromState) return fromState;
+
+    const params = new URLSearchParams(location.search);
+    const fromQuery = params.get("from");
+    if (fromQuery && fromQuery.startsWith("/")) return fromQuery;
+
+    return undefined;
+  })();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,7 +41,7 @@ export function LoginPage() {
       if (requestError instanceof ApiRequestError) {
         setError(requestError.message);
       } else {
-        setError("Khong the dang nhap. Vui long thu lai.");
+        setError("Không thể đăng nhập. Vui lòng thử lại.");
       }
     } finally {
       setIsSubmitting(false);
@@ -42,9 +51,9 @@ export function LoginPage() {
   return (
     <div className="auth-layout">
       <section className="auth-card">
-        <p className="auth-kicker">Cua hang ShopPro</p>
-        <h1>Chao mung ban quay lai ShopPro</h1>
-        <p className="auth-description">Dang nhap de vao dung khu vuc quan tri, van hanh hoac mua sam.</p>
+        <p className="auth-kicker">Cửa hàng ShopPro</p>
+        <h1>Chào mừng bạn quay lại ShopPro</h1>
+        <p className="auth-description">Đăng nhập để vào đúng khu vực quản trị, vận hành hoặc mua sắm.</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
@@ -52,7 +61,7 @@ export function LoginPage() {
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="admin"
+              placeholder="Nhập tên đăng nhập"
               autoComplete="username"
               required
             />
@@ -64,7 +73,7 @@ export function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="admin123"
+              placeholder="Nhập mật khẩu"
               autoComplete="current-password"
               required
             />
@@ -73,13 +82,13 @@ export function LoginPage() {
           {error ? <p className="form-error">{error}</p> : null}
 
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Dang dang nhap..." : "Dang nhap"}
+            {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
         <div className="demo-credentials">
           <p>
-            Chua co tai khoan? <Link to="/register">Dang ky ngay</Link>
+            Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
           </p>
         </div>       
       </section>

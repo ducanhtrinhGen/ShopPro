@@ -35,7 +35,7 @@ public class SecurityConfig {
      * Deployed frontend origin(s), e.g. "https://shoppro.id.vn".
      * Supports comma-separated list for preview/staging domains.
      */
-    @org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:}")
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:}")
     private String frontendUrl;
 
     @Bean

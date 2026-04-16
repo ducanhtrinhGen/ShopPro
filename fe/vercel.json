@@ -2,14 +2,8 @@
   "env": {
     "VITE_API_URL": "https://api.shoppro.id.vn"
   },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://api.shoppro.id.vn/api/:path*"
-    },
-    {
-      "source": "/products/image/:path*",
-      "destination": "https://api.shoppro.id.vn/products/image/:path*"
-    }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 }

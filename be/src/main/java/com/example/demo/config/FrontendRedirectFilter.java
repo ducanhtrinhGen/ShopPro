@@ -13,7 +13,7 @@ import java.io.IOException;
 @Component
 public class FrontendRedirectFilter extends OncePerRequestFilter {
 
-    @Value("${app.frontend-url:http://localhost:5173}")
+    @Value("${app.frontend-url:https://shoppro.id.vn}")
     private String frontendUrl;
 
     @Override
@@ -35,9 +35,24 @@ public class FrontendRedirectFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String query = request.getQueryString();
-        String target = frontendUrl + request.getRequestURI() + (query != null ? "?" + query : "");
+        String target = resolveFrontendBaseUrl() + request.getRequestURI() + (query != null ? "?" + query : "");
 
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.setHeader("Location", target);
+    }
+
+    private String resolveFrontendBaseUrl() {
+        if (frontendUrl == null) {
+            return "https://shoppro.id.vn";
+        }
+
+        for (String value : frontendUrl.split(",")) {
+            String normalized = value.trim();
+            if (!normalized.isEmpty()) {
+                return normalized;
+            }
+        }
+
+        return "https://shoppro.id.vn";
     }
 }

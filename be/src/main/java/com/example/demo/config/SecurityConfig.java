@@ -23,9 +23,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
@@ -127,7 +127,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(buildAllowedOriginPatterns());
+        config.setAllowedOrigins(buildAllowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -139,7 +139,7 @@ public class SecurityConfig {
         return source;
     }
 
-    private List<String> buildAllowedOriginPatterns() {
+    private List<String> buildAllowedOrigins() {
         List<String> base = List.of(
                 "https://shoppro.id.vn",
                 "https://www.shoppro.id.vn",
@@ -151,21 +151,13 @@ public class SecurityConfig {
             return base;
         }
 
-        List<String> configured = Arrays.stream(raw.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isBlank())
-                .collect(Collectors.toList());
-
-        if (configured.isEmpty()) {
-            return base;
+        Set<String> origins = new LinkedHashSet<>(base);
+        for (String value : raw.split(",")) {
+            String normalized = value == null ? "" : value.trim();
+            if (!normalized.isEmpty()) {
+                origins.add(normalized);
+            }
         }
-
-        // Allow configured origins + keep local development origins.
-        return Arrays.asList(
-                configured.toArray(new String[0])
-        ).stream().collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
-            list.addAll(base);
-            return list;
-        }));
+        return List.copyOf(origins);
     }
 }

@@ -23,6 +23,9 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
 function readApiBaseUrl(): string {
   const raw = (import.meta.env.VITE_API_URL ?? "").trim();
   if (!raw) {
+    if (import.meta.env.PROD) {
+      return "https://api.shoppro.id.vn";
+    }
     return "";
   }
   return raw.endsWith("/") ? raw.slice(0, -1) : raw;

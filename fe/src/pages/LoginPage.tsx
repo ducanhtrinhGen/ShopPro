@@ -55,14 +55,14 @@ export function LoginPage() {
         <h1>Chào mừng bạn quay lại ShopPro</h1>
         <p className="auth-description">Đăng nhập để vào đúng khu vực quản trị, vận hành hoặc mua sắm.</p>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
           <label>
             Ten dang nhap
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder="Nhập tên đăng nhập"
-              autoComplete="username"
+              autoComplete="off"
               required
             />
           </label>
@@ -74,7 +74,7 @@ export function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Nhập mật khẩu"
-              autoComplete="current-password"
+              autoComplete="off"
               required
             />
           </label>

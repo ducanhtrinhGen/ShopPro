@@ -59,8 +59,12 @@ public class CartApiController {
                     .body(new ApiError("Product not found."));
         }
 
-        cartService.addToCart(product, quantity, session);
-        return ResponseEntity.ok(toCartResponse(session));
+        try {
+            cartService.addToCart(product, quantity, session);
+            return ResponseEntity.ok(toCartResponse(session));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
+        }
     }
 
     @PutMapping("/items/{productId}")
@@ -72,8 +76,12 @@ public class CartApiController {
             return ResponseEntity.badRequest().body(new ApiError("Quantity is required."));
         }
 
-        cartService.updateQuantity(productId, request.quantity(), session);
-        return ResponseEntity.ok(toCartResponse(session));
+        try {
+            cartService.updateQuantity(productId, request.quantity(), session);
+            return ResponseEntity.ok(toCartResponse(session));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
+        }
     }
 
     @DeleteMapping("/items/{productId}")

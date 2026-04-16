@@ -43,9 +43,14 @@ public final class CatalogDtos {
             String categoryName,
             Integer brandId,
             String brandName,
+            List<String> galleryImages,
+            String sku,
             String shortDescription,
             String description,
-            String specifications) {
+            String specifications,
+            String warrantyPolicy,
+            List<String> supportHighlights,
+            List<ProductItem> relatedProducts) {
     }
 
     public record ProductPageResponse(

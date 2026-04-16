@@ -62,6 +62,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authz) -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/request", "/api/auth/password-reset/confirm")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/products",
                                 "/api/products/**",

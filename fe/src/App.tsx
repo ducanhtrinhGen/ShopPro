@@ -10,6 +10,8 @@ import { OrderPage } from "./pages/OrderPage";
 import { OwnerExecutivePage } from "./pages/OwnerExecutivePage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { StaffDashboardPage } from "./pages/StaffDashboardPage";
 import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -24,6 +26,8 @@ export function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route element={<AppShell />}>
         <Route path="/" element={<ProductsPage />} />

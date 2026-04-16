@@ -42,6 +42,11 @@ export type WishlistToggleResponse = {
   wished: boolean;
 };
 
+export type WishlistAddResponse = {
+  wished: boolean;
+  alreadyInWishlist: boolean;
+};
+
 export type ReviewItem = {
   id: number;
   productId: number;
@@ -120,9 +125,14 @@ export type ProductDetail = {
   categoryName: string | null;
   brandId: number | null;
   brandName: string | null;
+  galleryImages: string[];
+  sku: string | null;
   shortDescription: string | null;
   description: string | null;
   specifications: string | null;
+  warrantyPolicy: string | null;
+  supportHighlights: string[];
+  relatedProducts: Product[];
 };
 
 export type ProductPageResponse = {
@@ -267,6 +277,11 @@ export type AdminProductOpsItem = {
   thumbnail: string | null;
   status: string;
   createdAt: string;
+};
+
+export type AdminProductSubImageItem = {
+  id: number;
+  imageUrl: string;
 };
 
 export type AdminBrandItem = {

@@ -15,4 +15,19 @@ public final class AuthDtos {
 
     public record AuthUserResponse(String username, List<String> roles) {
     }
+
+    public record PasswordResetRequest(String email) {
+    }
+
+    public record PasswordResetRequestResponse(String message) {
+    }
+
+    public record PasswordResetConfirmRequest(String token, String newPassword, String confirmPassword) {
+    }
+
+    public record PasswordChangeRequest(String currentPassword, String newPassword, String confirmPassword) {
+    }
+
+    public record SimpleMessageResponse(String message) {
+    }
 }

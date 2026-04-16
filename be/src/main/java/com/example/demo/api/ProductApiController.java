@@ -3,6 +3,8 @@ package com.example.demo.api;
 import com.example.demo.api.dto.CatalogDtos.ProductItem;
 import com.example.demo.api.dto.CatalogDtos.ProductDetailResponse;
 import com.example.demo.api.dto.CatalogDtos.ProductPageResponse;
+import com.example.demo.model.ProductImage;
+import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.model.Product;
 import com.example.demo.service.ProductService;
 import org.springframework.data.domain.Page;
@@ -14,16 +16,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/products")
 public class ProductApiController {
 
     private final ProductService productService;
+    private final ProductImageRepository productImageRepository;
 
-    public ProductApiController(ProductService productService) {
+    public ProductApiController(ProductService productService, ProductImageRepository productImageRepository) {
         this.productService = productService;
+        this.productImageRepository = productImageRepository;
     }
 
     @GetMapping
@@ -103,6 +109,10 @@ public class ProductApiController {
         String categoryName = product.getCategory() != null ? product.getCategory().getName() : null;
         Integer brandId = product.getBrand() != null ? product.getBrand().getId() : null;
         String brandName = product.getBrand() != null ? product.getBrand().getName() : null;
+        List<String> galleryImages = buildGalleryImages(product);
+        List<ProductItem> relatedProducts = productService.getRelatedProducts(product, 4).stream()
+                .map(this::toProductItem)
+                .toList();
 
         return new ProductDetailResponse(
                 product.getId(),
@@ -118,8 +128,47 @@ public class ProductApiController {
                 categoryName,
                 brandId,
                 brandName,
+                galleryImages,
+                buildSku(product),
                 product.getShortDescription(),
                 product.getDescription(),
-                product.getSpecifications());
+                product.getSpecifications(),
+                buildWarrantyPolicy(product),
+                buildSupportHighlights(product),
+                relatedProducts);
+    }
+
+    private List<String> buildGalleryImages(Product product) {
+        LinkedHashSet<String> images = new LinkedHashSet<>();
+        images.add(ImageUrlResolver.toPublicImageUrl(product.getImage()));
+        images.add(ImageUrlResolver.toPublicImageUrl(product.getThumbnail()));
+
+        List<ProductImage> subImages = productImageRepository.findByProductOrderByIdAsc(product);
+        for (ProductImage image : subImages) {
+            images.add(ImageUrlResolver.toPublicImageUrl(image.getImageUrl()));
+        }
+        return images.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+    }
+
+    private String buildSku(Product product) {
+        return "SP-" + String.format(Locale.ROOT, "%05d", product.getId());
+    }
+
+    private String buildWarrantyPolicy(Product product) {
+        String productName = product.getName() == null || product.getName().isBlank() ? "san pham" : product.getName().trim();
+        return "Bao hanh chinh hang 12 thang cho " + productName + ". "
+                + "Ho tro 1 doi 1 trong 7 ngay neu loi nha san xuat va tu van ky thuat trong suot qua trinh su dung.";
+    }
+
+    private List<String> buildSupportHighlights(Product product) {
+        String category = product.getCategory() != null && product.getCategory().getName() != null
+                ? product.getCategory().getName().trim()
+                : "san pham";
+        return List.of(
+                "Giao nhanh toan quoc, kiem tra hang truoc khi nhan.",
+                "Tu van lap dat va tuong thich cho nhom " + category + ".",
+                "Ho tro doi tra minh bach neu phat sinh loi nha san xuat.");
     }
 }

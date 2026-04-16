@@ -704,21 +704,28 @@ export function ProductsPage() {
                     </div>
 
                     <div className="card-actions c-home-card-actions">
-                      <input
-                        type="number"
-                        min={1}
-                        disabled={out}
-                        value={quantityByProduct[product.id] ?? 1}
-                        onChange={(event) =>
-                          setQuantityByProduct((prev) => ({
-                            ...prev,
-                            [product.id]: Number(event.target.value)
-                          }))
-                        }
-                      />
-                      <button type="button" disabled={out} onClick={() => void handleAddToCart(product.id)}>
-                        {out ? "Hết hàng" : "Thêm vào giỏ"}
-                      </button>
+                      {out ? (
+                        <Link to="/contact" className="primary-link c-home-card-contact">
+                          Liên hệ / Contact us
+                        </Link>
+                      ) : (
+                        <>
+                          <input
+                            type="number"
+                            min={1}
+                            value={quantityByProduct[product.id] ?? 1}
+                            onChange={(event) =>
+                              setQuantityByProduct((prev) => ({
+                                ...prev,
+                                [product.id]: Number(event.target.value)
+                              }))
+                            }
+                          />
+                          <button type="button" onClick={() => void handleAddToCart(product.id)}>
+                            Thêm vào giỏ
+                          </button>
+                        </>
+                      )}
                     </div>
                   </article>
                 );

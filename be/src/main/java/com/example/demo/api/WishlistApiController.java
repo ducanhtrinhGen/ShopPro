@@ -1,6 +1,7 @@
 package com.example.demo.api;
 
 import com.example.demo.api.dto.ApiError;
+import com.example.demo.api.dto.StorefrontSupportDtos.WishlistAddResponse;
 import com.example.demo.api.dto.StorefrontSupportDtos.WishlistItem;
 import com.example.demo.api.dto.StorefrontSupportDtos.WishlistToggleResponse;
 import com.example.demo.model.Account;
@@ -78,6 +79,36 @@ public class WishlistApiController {
         created.setProduct(product);
         wishlistRepository.save(created);
         return ResponseEntity.ok(new WishlistToggleResponse(true));
+    }
+
+    /**
+     * Adds product to wishlist if missing. Does not remove existing rows (no toggle).
+     */
+    @PostMapping("/{productId}/add")
+    @Transactional
+    public ResponseEntity<?> add(
+            @PathVariable int productId,
+            org.springframework.security.core.Authentication authentication) {
+        Account account = resolveAccount(authentication);
+        if (account == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Chua dang nhap."));
+        }
+
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Product not found."));
+        }
+
+        Wishlist existing = wishlistRepository.findByUserAndProduct(account, product).orElse(null);
+        if (existing != null) {
+            return ResponseEntity.ok(new WishlistAddResponse(true, true));
+        }
+
+        Wishlist created = new Wishlist();
+        created.setUser(account);
+        created.setProduct(product);
+        wishlistRepository.save(created);
+        return ResponseEntity.ok(new WishlistAddResponse(true, false));
     }
 
     @DeleteMapping("/{productId}")

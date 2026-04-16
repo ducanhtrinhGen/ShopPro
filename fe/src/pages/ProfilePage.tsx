@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
+import { changeAuthenticatedPassword } from "../api/authPassword";
 import { getCustomerProfile, updateCustomerProfile } from "../api/customer";
+import { validatePasswordRules } from "../utils/passwordRules";
 import type { CustomerProfile } from "../types";
 
 function toErrorMessage(error: unknown, fallback: string) {
@@ -30,6 +32,13 @@ export function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const [pwdCurrent, setPwdCurrent] = useState("");
+  const [pwdNew, setPwdNew] = useState("");
+  const [pwdConfirm, setPwdConfirm] = useState("");
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [pwdMessage, setPwdMessage] = useState<string | null>(null);
+  const [isPwdSaving, setIsPwdSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +90,39 @@ export function ProfilePage() {
       setError(toErrorMessage(e, "Không thể cập nhật hồ sơ."));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPwdError(null);
+    setPwdMessage(null);
+
+    if (pwdNew !== pwdConfirm) {
+      setPwdError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+    const rule = validatePasswordRules(pwdNew);
+    if (rule) {
+      setPwdError(rule);
+      return;
+    }
+
+    setIsPwdSaving(true);
+    try {
+      await changeAuthenticatedPassword({
+        currentPassword: pwdCurrent,
+        newPassword: pwdNew,
+        confirmPassword: pwdConfirm
+      });
+      setPwdMessage("Đã cập nhật mật khẩu.");
+      setPwdCurrent("");
+      setPwdNew("");
+      setPwdConfirm("");
+    } catch (e) {
+      setPwdError(toErrorMessage(e, "Không đổi được mật khẩu."));
+    } finally {
+      setIsPwdSaving(false);
     }
   };
 
@@ -147,6 +189,60 @@ export function ProfilePage() {
             {isSaving ? "Đang lưu..." : "Lưu hồ sơ"}
           </button>
         </form>
+      ) : null}
+
+      {!isLoading && profile ? (
+        <>
+          <hr className="profile-divider" />
+          <header className="page-header" style={{ marginTop: "1.5rem" }}>
+            <div>
+              <p className="eyebrow">Bảo mật</p>
+              <h3 style={{ margin: 0 }}>Đổi mật khẩu</h3>
+              <p className="subtext">Nhập mật khẩu hiện tại và mật khẩu mới (tối thiểu 8 ký tự, có chữ cái và số).</p>
+            </div>
+          </header>
+
+          {pwdError ? <p className="form-error">{pwdError}</p> : null}
+          {pwdMessage ? <p className="inline-notice">{pwdMessage}</p> : null}
+
+          <form className="auth-form" onSubmit={(e) => void handlePasswordSubmit(e)} style={{ maxWidth: "520px" }}>
+            <label>
+              Mật khẩu hiện tại
+              <input
+                type="password"
+                value={pwdCurrent}
+                onChange={(e) => setPwdCurrent(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </label>
+            <label>
+              Mật khẩu mới
+              <input
+                type="password"
+                value={pwdNew}
+                onChange={(e) => setPwdNew(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+            <label>
+              Xác nhận mật khẩu mới
+              <input
+                type="password"
+                value={pwdConfirm}
+                onChange={(e) => setPwdConfirm(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+            <button type="submit" disabled={isPwdSaving}>
+              {isPwdSaving ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+            </button>
+          </form>
+        </>
       ) : null}
     </section>
   );

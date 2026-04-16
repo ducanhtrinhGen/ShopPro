@@ -47,6 +47,31 @@ public class ProductService {
         return productRepository.findBySlug(slug.trim()).orElse(null);
     }
 
+    public java.util.List<Product> getRelatedProducts(Product product, int limit) {
+        if (product == null || limit <= 0) {
+            return java.util.List.of();
+        }
+
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        Page<Product> page;
+
+        if (product.getCategory() != null) {
+            page = productRepository.findByStatusIgnoreCaseAndCategory_IdAndIdNot("ACTIVE", product.getCategory().getId(), product.getId(), pageable);
+            if (page.hasContent()) {
+                return page.getContent();
+            }
+        }
+
+        if (product.getBrand() != null) {
+            page = productRepository.findByStatusIgnoreCaseAndBrand_IdAndIdNot("ACTIVE", product.getBrand().getId(), product.getId(), pageable);
+            if (page.hasContent()) {
+                return page.getContent();
+            }
+        }
+
+        return productRepository.findByStatusIgnoreCaseAndIdNot("ACTIVE", product.getId(), pageable).getContent();
+    }
+
     public void deleteProduct(int id) {
         productRepository.deleteById(id);
     }

@@ -20,6 +20,12 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
 
     Optional<Product> findByName(String name);
 
+    Page<Product> findByStatusIgnoreCaseAndCategory_IdAndIdNot(String status, int categoryId, int excludedId, Pageable pageable);
+
+    Page<Product> findByStatusIgnoreCaseAndBrand_IdAndIdNot(String status, int brandId, int excludedId, Pageable pageable);
+
+    Page<Product> findByStatusIgnoreCaseAndIdNot(String status, int excludedId, Pageable pageable);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.id = :id")
     Optional<Product> findByIdForUpdate(@Param("id") int id);

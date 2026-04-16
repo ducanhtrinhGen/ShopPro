@@ -26,6 +26,10 @@ public final class StorefrontSupportDtos {
     public record WishlistToggleResponse(boolean wished) {
     }
 
+    /** Result of idempotent add: wished is always true when product is in wishlist after the call. */
+    public record WishlistAddResponse(boolean wished, boolean alreadyInWishlist) {
+    }
+
     public record ReviewItem(
             int id,
             int productId,

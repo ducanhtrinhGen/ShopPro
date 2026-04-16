@@ -88,9 +88,12 @@ export function LoginPage() {
 
         <div className="demo-credentials">
           <p>
+            <Link to="/forgot-password">Quên mật khẩu?</Link>
+          </p>
+          <p>
             Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
           </p>
-        </div>       
+        </div>
       </section>
     </div>
   );

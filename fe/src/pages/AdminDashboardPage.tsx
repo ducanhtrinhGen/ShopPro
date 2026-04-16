@@ -3,14 +3,17 @@ import { Link } from "react-router-dom";
 import {
   createAdminProduct,
   deleteAdminProduct,
+  deleteAdminProductSubImage,
   getAdminBrands,
   getAdminDataIssues,
   getAdminLowStockProducts,
   getAdminOrders,
+  getAdminProductSubImages,
   getAdminProducts,
   updateAdminOrderStatus,
   updateAdminProduct,
-  uploadAdminCloudinaryImage
+  uploadAdminCloudinaryImage,
+  uploadAdminProductSubImages
 } from "../api/adminOperations";
 import {
   createManagementUser,
@@ -30,6 +33,7 @@ import type {
   AdminDataIssue,
   AdminOrderItem,
   AdminProductOpsItem,
+  AdminProductSubImageItem,
   AdminProductUpsertPayload,
   AdminUser,
   AdminUserRole,
@@ -211,6 +215,26 @@ function toDisplayImageUrl(raw: string | null | undefined) {
   return `/products/image/${encodeURIComponent(filename)}`;
 }
 
+function validateImageFile(file: File) {
+  if (!file.type || !file.type.startsWith("image/")) {
+    return "Chi chap nhan file anh (image/*).";
+  }
+
+  const name = file.name.toLowerCase();
+  const allowed =
+    name.endsWith(".png") ||
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".webp") ||
+    name.endsWith(".gif") ||
+    name.endsWith(".avif");
+  if (!allowed) {
+    return "Dinh dang file khong hop le. Hay dung PNG/JPG/WEBP.";
+  }
+
+  return null;
+}
+
 function roleFromSelect(role: string): ManagementRole {
   if (role === "admin" || role === "staff" || role === "user") {
     return role;
@@ -298,6 +322,13 @@ export function AdminDashboardPage() {
   const [uploadingProductImage, setUploadingProductImage] = useState(false);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [productSubImages, setProductSubImages] = useState<AdminProductSubImageItem[]>([]);
+  const [isLoadingProductSubImages, setIsLoadingProductSubImages] = useState(false);
+  const [uploadingProductSubImages, setUploadingProductSubImages] = useState(false);
+  const [deletingSubImageId, setDeletingSubImageId] = useState<number | null>(null);
+  const [selectedSubUploadFiles, setSelectedSubUploadFiles] = useState<File[]>([]);
+  const subUploadInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     const loadStats = async () => {
       try {
@@ -322,6 +353,44 @@ export function AdminDashboardPage() {
 
     void loadStats();
   }, []);
+
+  useEffect(() => {
+    if (editingProductId === null) {
+      setProductSubImages([]);
+      setSelectedSubUploadFiles([]);
+      if (subUploadInputRef.current) {
+        subUploadInputRef.current.value = "";
+      }
+      return;
+    }
+
+    let active = true;
+    setIsLoadingProductSubImages(true);
+
+    const load = async () => {
+      try {
+        const data = await getAdminProductSubImages(editingProductId);
+        if (!active) {
+          return;
+        }
+        setProductSubImages(data);
+      } catch {
+        if (!active) {
+          return;
+        }
+        setProductSubImages([]);
+      } finally {
+        if (active) {
+          setIsLoadingProductSubImages(false);
+        }
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [editingProductId]);
 
   useEffect(() => {
     if (!stats.categories.length) {
@@ -718,6 +787,10 @@ export function AdminDashboardPage() {
     if (uploadInputRef.current) {
       uploadInputRef.current.value = "";
     }
+    setSelectedSubUploadFiles([]);
+    if (subUploadInputRef.current) {
+      subUploadInputRef.current.value = "";
+    }
     setProductForm((previous) => ({
       ...DEFAULT_PRODUCT_FORM,
       categoryId: stats.categories.length ? String(stats.categories[0].id) : previous.categoryId,
@@ -797,7 +870,8 @@ export function AdminDashboardPage() {
         setProducts((previous) => [created, ...previous]);
         setStats((previous) => ({ ...previous, productTotal: previous.productTotal + 1 }));
         setProductMessage(`Da tao san pham ${created.name}.`);
-        resetProductForm();
+        setEditingProductId(created.id);
+        setProductForm(productToForm(created));
       } else {
         const updated = await updateAdminProduct(editingProductId, payload);
         setProducts((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
@@ -820,6 +894,10 @@ export function AdminDashboardPage() {
     setSelectedUploadFile(null);
     if (uploadInputRef.current) {
       uploadInputRef.current.value = "";
+    }
+    setSelectedSubUploadFiles([]);
+    if (subUploadInputRef.current) {
+      subUploadInputRef.current.value = "";
     }
   };
 
@@ -876,6 +954,12 @@ export function AdminDashboardPage() {
       return;
     }
 
+    const validation = validateImageFile(selectedUploadFile);
+    if (validation) {
+      setProductMessage(validation);
+      return;
+    }
+
     setUploadingProductImage(true);
     setProductMessage(null);
 
@@ -898,6 +982,66 @@ export function AdminDashboardPage() {
       setProductMessage(toErrorMessage(error, "Khong the upload anh."));
     } finally {
       setUploadingProductImage(false);
+    }
+  };
+
+  const handleUploadProductSubImages = async () => {
+    if (editingProductId === null) {
+      setProductMessage("Hay luu san pham truoc khi upload anh phu.");
+      return;
+    }
+
+    if (!selectedSubUploadFiles.length) {
+      setProductMessage("Vui long chon it nhat mot anh phu.");
+      return;
+    }
+
+    for (const file of selectedSubUploadFiles) {
+      const validation = validateImageFile(file);
+      if (validation) {
+        setProductMessage(validation);
+        return;
+      }
+    }
+
+    setUploadingProductSubImages(true);
+    setProductMessage(null);
+
+    try {
+      const created = await uploadAdminProductSubImages(editingProductId, selectedSubUploadFiles);
+      setProductSubImages((previous) => [...previous, ...created]);
+      setProductMessage(`Da them ${created.length} anh phu.`);
+      setSelectedSubUploadFiles([]);
+      if (subUploadInputRef.current) {
+        subUploadInputRef.current.value = "";
+      }
+    } catch (error) {
+      setProductMessage(toErrorMessage(error, "Khong the upload anh phu."));
+    } finally {
+      setUploadingProductSubImages(false);
+    }
+  };
+
+  const handleDeleteProductSubImage = async (imageId: number) => {
+    if (editingProductId === null) {
+      return;
+    }
+
+    if (!window.confirm("Ban chac chan muon xoa anh phu nay?")) {
+      return;
+    }
+
+    setDeletingSubImageId(imageId);
+    setProductMessage(null);
+
+    try {
+      await deleteAdminProductSubImage(editingProductId, imageId);
+      setProductSubImages((previous) => previous.filter((item) => item.id !== imageId));
+      setProductMessage("Da xoa anh phu.");
+    } catch (error) {
+      setProductMessage(toErrorMessage(error, "Khong the xoa anh phu."));
+    } finally {
+      setDeletingSubImageId(null);
     }
   };
 
@@ -1258,6 +1402,64 @@ export function AdminDashboardPage() {
                   </button>
                 </div>
               </label>
+
+              <div className="owner-crm-product-subimages">
+                <div className="owner-crm-product-subimages-head">
+                  <div>
+                    <strong>Anh phu (gallery)</strong>
+                    <p>Upload nhieu anh de hien thi tren trang chi tiet san pham. Anh chinh o tren van giu nguyen.</p>
+                  </div>
+                  {editingProductId === null ? <span className="owner-crm-chip">Hay luu san pham truoc</span> : null}
+                </div>
+
+                {isLoadingProductSubImages ? <p className="owner-crm-empty">Dang tai danh sach anh phu...</p> : null}
+
+                {!isLoadingProductSubImages && editingProductId !== null && productSubImages.length ? (
+                  <div className="owner-crm-product-subimages-grid">
+                    {productSubImages.map((item) => {
+                      const src = toDisplayImageUrl(item.imageUrl);
+                      return (
+                        <div key={item.id} className="owner-crm-product-subimage-card">
+                          {src ? <img src={src} alt={`sub-${item.id}`} /> : <div className="owner-crm-product-thumb-empty">No image</div>}
+                          <button
+                            type="button"
+                            className="owner-crm-product-subimage-delete"
+                            disabled={deletingSubImageId === item.id}
+                            onClick={() => void handleDeleteProductSubImage(item.id)}
+                          >
+                            {deletingSubImageId === item.id ? "Dang xoa..." : "Xoa"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                {!isLoadingProductSubImages && editingProductId !== null && !productSubImages.length ? (
+                  <p className="owner-crm-empty">Chua co anh phu.</p>
+                ) : null}
+
+                <label className="is-wide">
+                  <span>Tai nhieu anh phu</span>
+                  <div className="owner-crm-product-upload-row">
+                    <input
+                      ref={subUploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={editingProductId === null}
+                      onChange={(event) => setSelectedSubUploadFiles(Array.from(event.target.files ?? []))}
+                    />
+                    <button
+                      type="button"
+                      disabled={editingProductId === null || uploadingProductSubImages}
+                      onClick={() => void handleUploadProductSubImages()}
+                    >
+                      {uploadingProductSubImages ? "Dang upload..." : "Upload anh phu"}
+                    </button>
+                  </div>
+                </label>
+              </div>
 
               <label className="is-wide">
                 <span>Mo ta ngan</span>

@@ -26,7 +26,9 @@ const PUBLIC_ROUTES = new Set([
   "/products",
   "/categories",
   "/login",
-  "/register"
+  "/register",
+  "/forgot-password",
+  "/reset-password"
 ]);
 
 function isPublicRoute(pathname: string) {

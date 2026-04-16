@@ -4,17 +4,28 @@ import com.example.demo.config.TestDataSeedConfig;
 import com.example.demo.model.Product;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.ProductRepository;
+import com.example.demo.service.PasswordResetNotifier;
 import com.jayway.jsonpath.JsonPath;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.reset;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +47,21 @@ class ApiFlowTests {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @MockBean
+    private PasswordResetNotifier passwordResetNotifier;
+
+    private final AtomicReference<String> lastResetLink = new AtomicReference<>();
+
+    @BeforeEach
+    void capturePasswordResetLinks() {
+        reset(passwordResetNotifier);
+        lastResetLink.set(null);
+        doAnswer(invocation -> {
+            lastResetLink.set(invocation.getArgument(1, String.class));
+            return null;
+        }).when(passwordResetNotifier).sendPasswordResetLink(anyString(), anyString());
+    }
 
     @Test
     void loginAndCartCheckoutFlowShouldWorkThroughApi() throws Exception {
@@ -85,7 +111,7 @@ class ApiFlowTests {
         Product product = new Product();
         product.setName("Low Stock Product");
         product.setPrice(2000L);
-        product.setQuantity(1);
+        product.setQuantity(2);
         product = productRepository.save(product);
 
         String buyer = "buyer_stock_" + System.currentTimeMillis();
@@ -112,9 +138,80 @@ class ApiFlowTests {
                                 """.formatted(product.getId())))
                 .andExpect(status().isOk());
 
+        product.setQuantity(1);
+        productRepository.save(product);
+
         mockMvc.perform(post("/api/cart/checkout").session(session))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Tồn kho")));
+    }
+
+    @Test
+    void addToCartShouldRejectWhenQuantityExceedsOnHandStock() throws Exception {
+        Product product = new Product();
+        product.setName("Single Unit Product");
+        product.setPrice(1500L);
+        product.setQuantity(1);
+        product = productRepository.save(product);
+
+        String buyer = "buyer_qty_cap_" + System.currentTimeMillis();
+        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "%s",
+                                  "password": "buyer123"
+                                }
+                                """.formatted(buyer)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+
+        mockMvc.perform(post("/api/cart/items").session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "productId": %d,
+                                  "quantity": 2
+                                }
+                                """.formatted(product.getId())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Tồn kho")));
+    }
+
+    @Test
+    void addToCartShouldRejectWhenProductIsOutOfStock() throws Exception {
+        Product product = new Product();
+        product.setName("Zero Stock Product");
+        product.setPrice(900L);
+        product.setQuantity(0);
+        product = productRepository.save(product);
+
+        String buyer = "buyer_oos_" + System.currentTimeMillis();
+        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "%s",
+                                  "password": "buyer123"
+                                }
+                                """.formatted(buyer)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+
+        mockMvc.perform(post("/api/cart/items").session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "productId": %d,
+                                  "quantity": 1
+                                }
+                                """.formatted(product.getId())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("hết hàng")));
     }
 
     @Test
@@ -386,5 +483,113 @@ class ApiFlowTests {
 
         mockMvc.perform(get("/api/orders/{id}", orderAId).session(sessionB))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void passwordResetRequestReturnsAckForUnknownEmail() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"noone99999@example.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    void passwordResetConfirmRejectsInvalidToken() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"invalid","newPassword":"Newpass1","confirmPassword":"Newpass1"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void passwordResetAndAuthenticatedChangePasswordFlows() throws Exception {
+        String buyer = "pwflow_" + System.currentTimeMillis();
+        String email = buyer + "@example.test";
+
+        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Oldpass1"}
+                                """.formatted(buyer)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+
+        mockMvc.perform(put("/api/customer/profile").session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","fullName":"Test"}
+                                """.formatted(email)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/logout").session(session))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"" + email + "\"}"))
+                .andExpect(status().isOk());
+
+        String link = lastResetLink.get();
+        assertNotNull(link);
+        String token = extractTokenFromResetLink(link);
+
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"%s","newPassword":"Newpass1","confirmPassword":"Newpass1"}
+                                """.formatted(token)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Oldpass1"}
+                                """.formatted(buyer)))
+                .andExpect(status().isUnauthorized());
+
+        MvcResult loginNew = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Newpass1"}
+                                """.formatted(buyer)))
+                .andExpect(status().isOk())
+                .andReturn();
+        MockHttpSession session2 = (MockHttpSession) loginNew.getRequest().getSession(false);
+
+        mockMvc.perform(post("/api/auth/password/change").session(session2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"currentPassword":"wrong","newPassword":"Other2pass","confirmPassword":"Other2pass"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/auth/password/change").session(session2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"currentPassword":"Newpass1","newPassword":"Other2pass","confirmPassword":"Other2pass"}
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"%s","password":"Other2pass"}
+                                """.formatted(buyer)))
+                .andExpect(status().isOk());
+    }
+
+    private static String extractTokenFromResetLink(String link) {
+        int idx = link.indexOf("token=");
+        if (idx < 0) {
+            return "";
+        }
+        String rest = link.substring(idx + "token=".length());
+        int amp = rest.indexOf('&');
+        String encoded = amp >= 0 ? rest.substring(0, amp) : rest;
+        return URLDecoder.decode(encoded, StandardCharsets.UTF_8);
     }
 }

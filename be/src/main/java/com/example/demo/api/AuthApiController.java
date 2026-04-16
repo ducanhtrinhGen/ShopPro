@@ -3,6 +3,7 @@ package com.example.demo.api;
 import com.example.demo.api.dto.ApiError;
 import com.example.demo.api.dto.AuthDtos.AuthUserResponse;
 import com.example.demo.api.dto.AuthDtos.LoginRequest;
+import com.example.demo.api.dto.AuthDtos.PasswordChangeRequest;
 import com.example.demo.api.dto.AuthDtos.RegisterRequest;
 import com.example.demo.model.Account;
 import com.example.demo.service.AccountService;
@@ -98,6 +99,29 @@ public class AuthApiController {
             Authentication authentication) {
         new SecurityContextLogoutHandler().logout(request, response, authentication);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password/change")
+    public ResponseEntity<?> changePassword(
+            @RequestBody(required = false) PasswordChangeRequest request,
+            Authentication authentication) {
+        if (!isAuthenticated(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiError("You are not logged in."));
+        }
+        if (request == null) {
+            return ResponseEntity.badRequest().body(new ApiError("Request body is required."));
+        }
+        try {
+            accountService.changePassword(
+                    authentication.getName(),
+                    request.currentPassword(),
+                    request.newPassword(),
+                    request.confirmPassword());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
+        }
     }
 
     private AuthUserResponse toAuthResponse(Authentication authentication) {

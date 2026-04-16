@@ -6,6 +6,7 @@ import type {
   AdminOrderDetailResponse,
   AdminOrderItem,
   AdminProductOpsItem,
+  AdminProductSubImageItem,
   AdminProductUpsertPayload
 } from "../types";
 
@@ -111,6 +112,46 @@ export function updateAdminProduct(productId: number, payload: AdminProductUpser
 
 export function deleteAdminProduct(productId: number) {
   return apiRequest<DeleteAdminProductResult>(`/api/admin/products/${productId}`, {
+    method: "DELETE"
+  });
+}
+
+export function getAdminProductSubImages(productId: number) {
+  return apiRequest<AdminProductSubImageItem[]>(`/api/admin/products/${productId}/sub-images`);
+}
+
+export async function uploadAdminProductSubImages(productId: number, files: File[]) {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+
+  const response = await fetch(withApiBaseUrl(`/api/admin/products/${productId}/sub-images`), {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  });
+
+  const rawBody = await response.text();
+  if (!response.ok) {
+    const jsonBody = parseJsonSafely<{ message?: string }>(rawBody);
+    const plainText = rawBody.trim();
+    const looksLikeHtml = plainText.startsWith("<!DOCTYPE") || plainText.startsWith("<html");
+    const fallbackFromBody = !looksLikeHtml && plainText ? plainText : undefined;
+    const message = jsonBody?.message ?? fallbackFromBody ?? `Upload anh phu that bai voi ma ${response.status}`;
+    throw new ApiRequestError(message, response.status);
+  }
+
+  const data = parseJsonSafely<AdminProductSubImageItem[]>(rawBody);
+  if (!data) {
+    throw new ApiRequestError("Phan hoi upload anh phu khong hop le.", 500);
+  }
+
+  return data;
+}
+
+export function deleteAdminProductSubImage(productId: number, imageId: number) {
+  return apiRequest<void>(`/api/admin/products/${productId}/sub-images/${imageId}`, {
     method: "DELETE"
   });
 }

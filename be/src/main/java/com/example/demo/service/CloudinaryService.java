@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,6 +32,7 @@ public class CloudinaryService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File anh khong hop le.");
         }
+        validateImageMultipart(file);
 
         Cloudinary cloudinary = buildClient();
         String effectiveFolder = normalizeFolder(folder);
@@ -57,6 +60,105 @@ public class CloudinaryService {
             throw new IllegalStateException("Upload anh len Cloudinary that bai.", ex);
         } catch (RuntimeException ex) {
             throw new IllegalStateException(buildUploadFailureMessage(ex), ex);
+        }
+    }
+
+    /**
+     * Best-effort delete for images uploaded to this Cloudinary account.
+     * If the URL cannot be mapped to a public_id, this becomes a no-op.
+     */
+    public void tryDestroyUploadedImage(String secureUrl) {
+        if (isBlank(secureUrl)) {
+            return;
+        }
+
+        String publicId = extractCloudinaryPublicId(secureUrl.trim());
+        if (publicId == null || publicId.isBlank()) {
+            return;
+        }
+
+        try {
+            Cloudinary cloudinary = buildClient();
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "image"));
+        } catch (Exception ignored) {
+            // Best-effort: DB row is already removed; avoid failing the admin flow on Cloudinary issues.
+        }
+    }
+
+    private void validateImageMultipart(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new IllegalArgumentException("Chi chap nhan file anh (image/*).");
+        }
+
+        String original = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase(Locale.ROOT);
+        if (!original.isBlank()) {
+            boolean looksLikeImage = original.endsWith(".png")
+                    || original.endsWith(".jpg")
+                    || original.endsWith(".jpeg")
+                    || original.endsWith(".webp")
+                    || original.endsWith(".gif")
+                    || original.endsWith(".avif");
+            if (!looksLikeImage) {
+                throw new IllegalArgumentException("Dinh dang file khong hop le. Hay dung PNG/JPG/WEBP.");
+            }
+        }
+    }
+
+    private String extractCloudinaryPublicId(String secureUrl) {
+        try {
+            URI uri = URI.create(secureUrl);
+            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
+            if (!host.contains("res.cloudinary.com")) {
+                return null;
+            }
+
+            String path = uri.getPath();
+            if (path == null || path.isBlank()) {
+                return null;
+            }
+
+            // Typical path: /{cloud_name}/image/upload/v1234567890/{public_id}.{ext}
+            // or: /{cloud_name}/image/upload/{public_id}.{ext}
+            String normalized = path.startsWith("/") ? path.substring(1) : path;
+            String[] segments = normalized.split("/");
+            int uploadIndex = -1;
+            for (int i = 0; i < segments.length; i++) {
+                if ("upload".equalsIgnoreCase(segments[i])) {
+                    uploadIndex = i;
+                    break;
+                }
+            }
+
+            if (uploadIndex < 0 || uploadIndex + 1 >= segments.length) {
+                return null;
+            }
+
+            int next = uploadIndex + 1;
+            if (next < segments.length && segments[next].matches("v\\d+")) {
+                next++;
+            }
+
+            if (next >= segments.length) {
+                return null;
+            }
+
+            StringBuilder publicId = new StringBuilder();
+            for (int i = next; i < segments.length; i++) {
+                if (!publicId.isEmpty()) {
+                    publicId.append('/');
+                }
+                publicId.append(segments[i]);
+            }
+
+            String candidate = publicId.toString();
+            int dot = candidate.lastIndexOf('.');
+            if (dot > 0) {
+                candidate = candidate.substring(0, dot);
+            }
+            return candidate;
+        } catch (IllegalArgumentException ex) {
+            return null;
         }
     }
 

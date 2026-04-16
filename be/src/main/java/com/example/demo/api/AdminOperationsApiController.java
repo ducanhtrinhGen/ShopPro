@@ -6,6 +6,7 @@ import com.example.demo.api.dto.AdminOpsDtos.AdminCategoryItem;
 import com.example.demo.api.dto.AdminOpsDtos.AdminOrderDetailResponse;
 import com.example.demo.api.dto.AdminOpsDtos.AdminOrderItem;
 import com.example.demo.api.dto.AdminOpsDtos.AdminProductItem;
+import com.example.demo.api.dto.AdminOpsDtos.AdminProductSubImageItem;
 import com.example.demo.api.dto.AdminOpsDtos.BlogPostUpsertRequest;
 import com.example.demo.api.dto.AdminOpsDtos.BrandUpsertRequest;
 import com.example.demo.api.dto.AdminOpsDtos.CategoryUpsertRequest;
@@ -30,6 +31,7 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.ReviewRepository;
 import com.example.demo.repository.WishlistRepository;
 import com.example.demo.service.OperationalBackofficeService;
+import com.example.demo.service.ProductSubImageService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -45,6 +47,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
 import java.util.List;
@@ -68,6 +71,7 @@ public class AdminOperationsApiController {
     private final ReviewRepository reviewRepository;
     private final WishlistRepository wishlistRepository;
     private final OrderDetailRepository orderDetailRepository;
+    private final ProductSubImageService productSubImageService;
 
     public AdminOperationsApiController(
             OperationalBackofficeService operationalBackofficeService,
@@ -79,7 +83,8 @@ public class AdminOperationsApiController {
             ProductImageRepository productImageRepository,
             ReviewRepository reviewRepository,
             WishlistRepository wishlistRepository,
-            OrderDetailRepository orderDetailRepository) {
+            OrderDetailRepository orderDetailRepository,
+            ProductSubImageService productSubImageService) {
         this.operationalBackofficeService = operationalBackofficeService;
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
@@ -90,6 +95,7 @@ public class AdminOperationsApiController {
         this.reviewRepository = reviewRepository;
         this.wishlistRepository = wishlistRepository;
         this.orderDetailRepository = orderDetailRepository;
+        this.productSubImageService = productSubImageService;
     }
 
     @GetMapping("/products")
@@ -130,6 +136,44 @@ public class AdminOperationsApiController {
                     .body(new ApiError("Khong tim thay san pham voi id: " + id));
         }
         return ResponseEntity.ok(toProductItem(product));
+    }
+
+    @GetMapping("/products/{id}/sub-images")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> listProductSubImages(@PathVariable int id) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Khong tim thay san pham voi id: " + id));
+        }
+
+        return ResponseEntity.ok(productSubImageService.listSubImages(id).stream()
+                .map(image -> new AdminProductSubImageItem(image.getId(), image.getImageUrl()))
+                .toList());
+    }
+
+    @PostMapping("/products/{id}/sub-images")
+    @Transactional
+    public ResponseEntity<?> uploadProductSubImages(@PathVariable int id, @RequestParam("files") List<MultipartFile> files) {
+        try {
+            return ResponseEntity.ok(productSubImageService.uploadSubImages(id, files).stream()
+                    .map(image -> new AdminProductSubImageItem(image.getId(), image.getImageUrl()))
+                    .toList());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ApiError(ex.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/products/{id}/sub-images/{imageId}")
+    @Transactional
+    public ResponseEntity<?> deleteProductSubImage(@PathVariable int id, @PathVariable int imageId) {
+        try {
+            productSubImageService.deleteSubImage(id, imageId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiError(ex.getMessage()));
+        }
     }
 
     @PostMapping("/products")

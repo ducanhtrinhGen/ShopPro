@@ -66,6 +66,32 @@ public class AccountService implements UserDetailsService {
         return accountRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public void changePassword(String loginName, String currentRaw, String newRaw, String confirmRaw) {
+        PasswordPolicy.requireMatch(newRaw, confirmRaw);
+        PasswordPolicy.validate(newRaw);
+
+        String normalizedLogin = loginName == null ? "" : loginName.trim();
+        if (normalizedLogin.isEmpty()) {
+            throw new IllegalArgumentException("Tai khoan khong hop le.");
+        }
+
+        Account account = accountRepository.findByLoginName(normalizedLogin)
+                .orElseThrow(() -> new IllegalArgumentException("Tai khoan khong ton tai."));
+
+        String current = currentRaw == null ? "" : currentRaw;
+        if (!passwordEncoder.matches(current, account.getPassword())) {
+            throw new IllegalArgumentException("Mat khau hien tai khong dung.");
+        }
+
+        if (passwordEncoder.matches(newRaw, account.getPassword())) {
+            throw new IllegalArgumentException("Mat khau moi phai khac mat khau hien tai.");
+        }
+
+        account.setPassword(passwordEncoder.encode(newRaw));
+        accountRepository.save(account);
+    }
+
     public Account createUserAccount(String loginName, String rawPassword) {
         String normalizedLoginName = loginName == null ? "" : loginName.trim();
         String normalizedPassword = rawPassword == null ? "" : rawPassword.trim();
@@ -76,6 +102,8 @@ public class AccountService implements UserDetailsService {
         if (normalizedPassword.isEmpty()) {
             throw new IllegalArgumentException("Mat khau khong duoc de trong.");
         }
+
+        PasswordPolicy.validate(normalizedPassword);
 
         if (accountRepository.findByLoginName(normalizedLoginName).isPresent()) {
             throw new IllegalStateException("Ten dang nhap da ton tai.");
@@ -149,6 +177,9 @@ public class AccountService implements UserDetailsService {
         if (normalizedPassword.isEmpty()) {
             throw new IllegalArgumentException("Mat khau khong duoc de trong.");
         }
+
+        PasswordPolicy.validate(normalizedPassword);
+
         if (accountRepository.findByLoginName(normalizedLoginName).isPresent()) {
             throw new IllegalStateException("Ten dang nhap da ton tai.");
         }

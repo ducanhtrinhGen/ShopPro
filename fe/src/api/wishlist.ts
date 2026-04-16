@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { WishlistItem, WishlistToggleResponse } from "../types";
+import type { WishlistAddResponse, WishlistItem, WishlistToggleResponse } from "../types";
 
 export function getMyWishlist() {
   return apiRequest<WishlistItem[]>("/api/wishlist");
@@ -7,6 +7,10 @@ export function getMyWishlist() {
 
 export function toggleWishlist(productId: number) {
   return apiRequest<WishlistToggleResponse>(`/api/wishlist/${productId}`, { method: "POST" });
+}
+
+export function addToWishlist(productId: number) {
+  return apiRequest<WishlistAddResponse>(`/api/wishlist/${productId}/add`, { method: "POST" });
 }
 
 export function removeWishlist(productId: number) {

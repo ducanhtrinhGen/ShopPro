@@ -77,6 +77,9 @@ public final class AdminOpsDtos {
             LocalDateTime createdAt) {
     }
 
+    public record AdminProductSubImageItem(int id, String imageUrl) {
+    }
+
     public record AdminCategoryItem(
             int id,
             String name,

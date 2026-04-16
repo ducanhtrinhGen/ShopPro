@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
+import { validatePasswordRules } from "../utils/passwordRules";
 import { useAuth } from "../auth/AuthContext";
 import { getDefaultRouteForUser } from "../auth/roleUtils";
 
@@ -30,6 +31,12 @@ export function RegisterPage() {
 
     if (password !== confirmPassword) {
       setError("Mat khau nhap lai khong khop.");
+      return;
+    }
+
+    const pwdRule = validatePasswordRules(password);
+    if (pwdRule) {
+      setError(pwdRule);
       return;
     }
 

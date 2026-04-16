@@ -36,7 +36,7 @@ public class TestDataSeedConfig {
             accountRepository.save(buildAccount("owner", "owner123", passwordEncoder, Set.of(ownerRole)));
             accountRepository.save(buildAccount("admin", "admin123", passwordEncoder, Set.of(adminRole)));
             accountRepository.save(buildAccount("staff1", "staff123", passwordEncoder, Set.of(staffRole)));
-            accountRepository.save(buildAccount("user1", "user123", passwordEncoder, Set.of(customerRole)));
+            accountRepository.save(buildAccount("user1", "user1234", passwordEncoder, Set.of(customerRole)));
         };
     }
 

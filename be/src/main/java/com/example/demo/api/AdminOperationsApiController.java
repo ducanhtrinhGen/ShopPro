@@ -23,7 +23,6 @@ import com.example.demo.model.OrderDetail;
 import com.example.demo.model.Product;
 import com.example.demo.repository.BlogPostRepository;
 import com.example.demo.repository.BrandRepository;
-import com.example.demo.repository.CartLineItemRepository;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.OrderDetailRepository;
 import com.example.demo.repository.ProductImageRepository;
@@ -66,7 +65,6 @@ public class AdminOperationsApiController {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final BlogPostRepository blogPostRepository;
-    private final CartLineItemRepository cartLineItemRepository;
     private final ProductImageRepository productImageRepository;
     private final ReviewRepository reviewRepository;
     private final WishlistRepository wishlistRepository;
@@ -79,7 +77,6 @@ public class AdminOperationsApiController {
             CategoryRepository categoryRepository,
             BrandRepository brandRepository,
             BlogPostRepository blogPostRepository,
-            CartLineItemRepository cartLineItemRepository,
             ProductImageRepository productImageRepository,
             ReviewRepository reviewRepository,
             WishlistRepository wishlistRepository,
@@ -90,7 +87,6 @@ public class AdminOperationsApiController {
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.blogPostRepository = blogPostRepository;
-        this.cartLineItemRepository = cartLineItemRepository;
         this.productImageRepository = productImageRepository;
         this.reviewRepository = reviewRepository;
         this.wishlistRepository = wishlistRepository;
@@ -226,7 +222,6 @@ public class AdminOperationsApiController {
 
         try {
             detachOrderDetails(product);
-            cartLineItemRepository.deleteByProduct(product);
             wishlistRepository.deleteByProduct(product);
             reviewRepository.deleteByProduct(product);
             productImageRepository.deleteByProduct(product);

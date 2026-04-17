@@ -304,10 +304,10 @@ export function ProductDetailPage() {
         "Đổi trả minh bạch nếu có lỗi từ nhà sản xuất."
       ];
   const tabs: Array<{ id: DetailTab; label: string }> = [
-    { id: "description", label: "Description" },
-    { id: "specifications", label: "Specifications" },
-    { id: "reviews", label: "Reviews" },
-    { id: "warranty", label: "Warranty policy" }
+    { id: "description", label: "Mô tả" },
+    { id: "specifications", label: "Thông số" },
+    { id: "reviews", label: "Đánh giá" },
+    { id: "warranty", label: "Bảo hành" }
   ];
 
   const updateQuantity = (nextValue: number) => {
@@ -352,12 +352,12 @@ export function ProductDetailPage() {
     }
 
     if (!isCustomer) {
-      setNotice("Wishlist chỉ dành cho tài khoản khách hàng.");
+      setNotice("Danh sách yêu thích chỉ dành cho tài khoản khách hàng.");
       return;
     }
 
     if (isWished) {
-      setNotice("Sản phẩm đã có trong wishlist của bạn.");
+      setNotice("Sản phẩm đã có trong danh sách yêu thích của bạn.");
       return;
     }
 
@@ -365,9 +365,9 @@ export function ProductDetailPage() {
     try {
       const result = await addToWishlist(product.id);
       setIsWished(true);
-      setNotice(result.alreadyInWishlist ? "Sản phẩm đã có trong wishlist." : "Đã thêm vào wishlist.");
+      setNotice(result.alreadyInWishlist ? "Sản phẩm đã có trong danh sách yêu thích." : "Đã thêm vào danh sách yêu thích.");
     } catch (e) {
-      setNotice(toErrorMessage(e, "Không thêm được vào wishlist."));
+      setNotice(toErrorMessage(e, "Không thêm được vào danh sách yêu thích."));
     } finally {
       setIsTogglingWish(false);
     }
@@ -399,7 +399,7 @@ export function ProductDetailPage() {
     <section className="panel">
       <header className="page-header">
         <p className="breadcrumbs">
-          <Link to="/products">Catalog</Link>
+          <Link to="/products">Sản phẩm</Link>
           {product.categoryId ? (
             <>
               {" "}
@@ -495,7 +495,7 @@ export function ProductDetailPage() {
 
           <div className="c-product-detail-facts">
             <div>
-              <span>Brand</span>
+              <span>Thương hiệu</span>
               <strong>{product.brandName ?? "ShopPro Select"}</strong>
             </div>
             <div>
@@ -503,11 +503,11 @@ export function ProductDetailPage() {
               <strong>{product.sku ?? `SP-${product.id}`}</strong>
             </div>
             <div>
-              <span>Category</span>
+              <span>Danh mục</span>
               <strong>{product.categoryName ?? "Chưa phân loại"}</strong>
             </div>
             <div>
-              <span>Warranty</span>
+              <span>Bảo hành</span>
               <strong>12 tháng</strong>
             </div>
           </div>
@@ -552,7 +552,7 @@ export function ProductDetailPage() {
               {out ? (
                 <Link to="/contact" className="c-product-contact-cta">
                   <span className="c-product-contact-cta-title">Liên hệ</span>
-                  <span className="c-product-contact-cta-sub">Contact us</span>
+                  <span className="c-product-contact-cta-sub">Tư vấn nhanh</span>
                 </Link>
               ) : (
                 <>
@@ -575,22 +575,22 @@ export function ProductDetailPage() {
               onClick={() => void handleWishlistAction()}
             >
               {wishlistStatusLoading
-                ? "Đang kiểm tra wishlist…"
+                ? "Đang kiểm tra danh sách yêu thích…"
                 : !user
-                  ? "♡ Thêm vào wishlist"
+                  ? "♡ Thêm vào danh sách yêu thích"
                   : isWished
-                    ? "Đã trong wishlist"
-                    : "♡ Thêm vào wishlist"}
+                    ? "Đã có trong danh sách yêu thích"
+                    : "♡ Thêm vào danh sách yêu thích"}
             </button>
             {user && isCustomer && isWished ? (
               <Link to="/wishlist" className="c-product-wish-secondary">
-                Xem wishlist
+                Xem danh sách yêu thích
               </Link>
             ) : null}
           </div>
 
           <section className="c-product-detail-clarity">
-            <h2>Shipping & support</h2>
+            <h2>Vận chuyển & hỗ trợ</h2>
             <ul>
               {supportHighlights.map((item) => (
                 <li key={item}>{item}</li>

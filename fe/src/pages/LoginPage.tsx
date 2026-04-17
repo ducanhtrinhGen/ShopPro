@@ -57,7 +57,7 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
           <label>
-            Ten dang nhap
+            Tên đăng nhập
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
@@ -68,7 +68,7 @@ export function LoginPage() {
           </label>
 
           <label>
-            Mat khau
+            Mật khẩu
             <input
               type="password"
               value={password}

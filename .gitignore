@@ -36,3 +36,13 @@ be/.vscode/
 ### Frontend ###
 fe/node_modules/
 fe/dist/
+fe/tsconfig.tsbuildinfo
+fe/tsconfig.node.tsbuildinfo
+fe/*.tsbuildinfo
+fe/.vite/
+fe/.vercel/
+fe/npm-debug.log*
+fe/yarn-debug.log*
+fe/pnpm-debug.log*
+fe/.env.local
+fe/.env.*.local

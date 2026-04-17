@@ -706,7 +706,7 @@ export function ProductsPage() {
                     <div className="card-actions c-home-card-actions">
                       {out ? (
                         <Link to="/contact" className="primary-link c-home-card-contact">
-                          Liên hệ / Contact us
+                          Liên hệ
                         </Link>
                       ) : (
                         <>

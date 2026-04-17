@@ -182,7 +182,7 @@ function toOrderTag(index: number) {
     return "Tháng này";
   }
   if (index % 3 === 1) {
-    return "Luu trữ";
+    return "Lưu trữ";
   }
   return "Chờ xử lý";
 }
@@ -217,7 +217,7 @@ function toDisplayImageUrl(raw: string | null | undefined) {
 
 function validateImageFile(file: File) {
   if (!file.type || !file.type.startsWith("image/")) {
-    return "Chi chap nhan file anh (image/*).";
+    return "Chỉ chấp nhận file ảnh (image/*).";
   }
 
   const name = file.name.toLowerCase();
@@ -229,7 +229,7 @@ function validateImageFile(file: File) {
     name.endsWith(".gif") ||
     name.endsWith(".avif");
   if (!allowed) {
-    return "Dinh dang file khong hop le. Hay dung PNG/JPG/WEBP.";
+    return "Định dạng file không hợp lệ. Hãy dùng PNG/JPG/WEBP.";
   }
 
   return null;
@@ -1225,12 +1225,12 @@ export function AdminDashboardPage() {
                 <strong>Ten danh muc:</strong> {selectedCategory.name}
               </p>
               <div className="owner-crm-category-links">
-                <Link to={`/products?categoryId=${selectedCategory.id}`}>Mo trang san pham theo danh muc</Link>
-                <Link to="/products">Mo toan bo san pham</Link>
+                <Link to={`/products?categoryId=${selectedCategory.id}`}>Mở trang sản phẩm theo danh mục</Link>
+                <Link to="/products">Mở toàn bộ sản phẩm</Link>
               </div>
             </div>
           ) : (
-            <p className="owner-crm-empty">Chon mot danh muc trong bang ben tren de xem chi tiet.</p>
+            <p className="owner-crm-empty">Chọn một danh mục trong bảng bên trên để xem chi tiết.</p>
           )}
         </section>
       </>
@@ -1249,15 +1249,15 @@ export function AdminDashboardPage() {
             <strong>{products.length}</strong>
           </article>
           <article>
-            <span>Dang ban</span>
+            <span>Đang bán</span>
             <strong>{activeProductsCount}</strong>
           </article>
           <article>
-            <span>Dang giam gia</span>
+            <span>Đang giảm giá</span>
             <strong>{discountedProductsCount}</strong>
           </article>
           <article>
-            <span>Ton kho thap (&lt;=5)</span>
+            <span>Tồn kho thấp (&lt;=5)</span>
             <strong>{lowStockProductsCount}</strong>
           </article>
         </section>
@@ -1267,7 +1267,7 @@ export function AdminDashboardPage() {
             <h2>CRUD sản phẩm</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={resetProductForm}>
-                {editingProductId === null ? "Lam moi form" : "Thoat che do sua"}
+                {editingProductId === null ? "Làm mới form" : "Thoát chế độ sửa"}
               </button>
               <button type="button" onClick={() => setActiveView("categories")}>
                 Quản lý danh mục
@@ -1760,7 +1760,7 @@ export function AdminDashboardPage() {
                               disabled={updatingOrderId === order.id}
                               onClick={() => void handleOrderStatusUpdate(order.id)}
                             >
-                              {updatingOrderId === order.id ? "Dang cap nhat..." : "Cap nhat"}
+                              {updatingOrderId === order.id ? "Đang cập nhật..." : "Cập nhật"}
                             </button>
                           </div>
                         </td>
@@ -1846,7 +1846,7 @@ export function AdminDashboardPage() {
               ))}
             </select>
             <button type="button" disabled={creatingUser} onClick={() => void handleCreateUser()}>
-              {creatingUser ? "Dang tao..." : "Tao tai khoan"}
+              {creatingUser ? "Đang tạo..." : "Tạo tài khoản"}
             </button>
           </div>
         </section>
@@ -1856,10 +1856,10 @@ export function AdminDashboardPage() {
             <h2>Danh sach tai khoan ({ownerManagedUsers.length})</h2>
           </div>
 
-          {isLoadingUsers ? <p className="owner-crm-empty">Dang tai danh sach tai khoan...</p> : null}
+          {isLoadingUsers ? <p className="owner-crm-empty">Đang tải danh sách tài khoản...</p> : null}
 
           {!isLoadingUsers && !ownerManagedUsers.length ? (
-            <p className="owner-crm-empty">Chua co tai khoan van hanh nao de hien thi.</p>
+            <p className="owner-crm-empty">Chưa có tài khoản vận hành nào để hiển thị.</p>
           ) : null}
 
           {!isLoadingUsers && ownerManagedUsers.length ? (
@@ -1886,7 +1886,7 @@ export function AdminDashboardPage() {
                       </td>
                       <td>
                         <span className={`role-admin-badge ${item.locked ? "is-locked" : "is-active"}`}>
-                          {item.locked ? "Da khoa" : "Dang hoat dong"}
+                          {item.locked ? "Đã khóa" : "Đang hoạt động"}
                         </span>
                       </td>
                       <td>
@@ -1981,33 +1981,33 @@ export function AdminDashboardPage() {
               <p className="owner-crm-kicker">BẢNG ĐIỀU HÀNH ADMIN</p>
               <h1>
                 {activeView === "overview"
-                  ? "Trung tam dieu hanh quan tri"
+                  ? "Trung tâm điều hành quản trị"
                   : activeView === "categories"
                     ? "Quản lý danh mục sản phẩm"
                     : activeView === "products"
-                      ? "Quan ly san pham, kho va giam gia"
+                      ? "Quản lý sản phẩm, kho và giảm giá"
                     : activeView === "orders"
                       ? "Quản lý đơn hàng"
-                      : "Quan ly nguoi dung he thong"}
+                      : "Quản lý người dùng hệ thống"}
               </h1>
               <p>
                 {activeView === "overview"
                   ? (isOwner
                       ? "Admin dashboard phục vụ catalog/vận hành. Báo cáo cấp cao & quản trị tài khoản quản trị nằm ở trang Owner."
-                      : "Theo doi KPI, don hang, ton kho va du lieu van hanh trong cung bang dieu khien.")
+                      : "Theo dõi KPI, đơn hàng, tồn kho và dữ liệu vận hành trong cùng bảng điều khiển.")
                   : activeView === "categories"
-                    ? "Trang danh muc dung cung bo cuc voi Owner de de theo doi va thao tac."
+                    ? "Trang danh mục dùng cùng bớc với Owner để theo dõi và thao tác."
                     : activeView === "products"
-                      ? "Admin CRUD san pham ngay tai day: cap nhat anh, ton kho va gia giam theo nhu cau."
+                      ? "Admin CRUD sản phẩm ngay tại đây: cập nhật ảnh, tồn kho và giảm giá theo nhu cầu."
                     : activeView === "orders"
-                      ? "Admin va Owner deu co the xem va cap nhat trang thai don hang."
-                      : "Chi Owner co quyen tao, doi vai tro, khoa/mo hoac xoa tai khoan quan tri."}
+                      ? "Admin và Owner đều có thể xem và cập nhật trạng thái đơn hàng."
+                      : "Chỉ Owner có quyền tạo, đổi vai trò, khóa/mở hoặc xóa tài khoản quản trị."}
               </p>
             </div>
 
             <div className="owner-crm-header-actions">
               <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to="/staff">Sang bang dieu khien Staff</Link>
+              <Link to="/staff">Sang bảng điều khiển Staff</Link>
             </div>
           </header>
 
@@ -2020,23 +2020,23 @@ export function AdminDashboardPage() {
           {activeView !== "users" ? (
             <section className="owner-crm-panel">
               <div className="owner-crm-panel-head">
-                <h2>Tom tat nhanh</h2>
+                <h2>Tổng quan nhanh</h2>
               </div>
               <div className="owner-crm-kpi-grid">
                 <article>
-                  <span>Khach hang gan day</span>
+                  <span>Khách hàng gần đây</span>
                   <strong>{customerCount}</strong>
                 </article>
                 <article>
-                  <span>San pham ton thap</span>
+                  <span>Sản phẩm tồn thấp</span>
                   <strong>{lowStock.length}</strong>
                 </article>
                 <article>
-                  <span>Loi du lieu</span>
+                  <span>Lỗi dữ liệu</span>
                   <strong>{dataIssues.length}</strong>
                 </article>
                 <article>
-                  <span>Nguoi dung quan tri</span>
+                  <span>Người dùng quản trị</span>
                   <strong>{isOwner ? users.length : "Owner only"}</strong>
                 </article>
               </div>

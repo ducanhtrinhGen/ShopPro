@@ -64,7 +64,7 @@ export function getDefaultRouteForUser(user: AuthUser | null) {
     return "/staff";
   }
 
-  return "/customer";
+  return "/profile";
 }
 
 /**

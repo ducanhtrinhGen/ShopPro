@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiRequest, ApiRequestError } from "../api/client";
 import { getBrands, getCategories } from "../api/catalog";
+import { useAuth } from "../auth/AuthContext";
+import { useLoginModal } from "../auth/LoginModalContext";
+import { isCustomerUser } from "../auth/roleUtils";
 import type { Brand, Category, Product, ProductPageResponse } from "../types";
 
 type ProductSort = "default" | "newest" | "priceAsc" | "priceDesc" | "discountDesc";
@@ -141,6 +144,8 @@ function promoPercent(product: Product) {
 }
 
 export function ProductsPage() {
+  const { user } = useAuth();
+  const { openLoginModal } = useLoginModal();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = useMemo(() => parseQuery(searchParams), [searchParams]);
 
@@ -319,7 +324,7 @@ export function ProductsPage() {
     return `Trang ${productPage.page + 1} / ${productPage.totalPages}`;
   }, [productPage]);
 
-  const handleAddToCart = async (productId: number) => {
+  const performAddToCart = async (productId: number) => {
     const quantity = Math.max(quantityByProduct[productId] ?? 1, 1);
     setNotice(null);
 
@@ -336,6 +341,14 @@ export function ProductsPage() {
         setNotice("Không thể thêm sản phẩm vào giỏ hàng.");
       }
     }
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    if (!user || !isCustomerUser(user)) {
+      openLoginModal({ onSuccess: () => void performAddToCart(productId) });
+      return;
+    }
+    await performAddToCart(productId);
   };
 
   const buildCategoryHref = (categoryId: string) => {

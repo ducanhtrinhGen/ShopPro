@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { apiRequest, ApiRequestError } from "../api/client";
 import { getProductReviews, upsertReview } from "../api/reviews";
 import { addToWishlist, getMyWishlist } from "../api/wishlist";
 import { useAuth } from "../auth/AuthContext";
+import { useLoginModal } from "../auth/LoginModalContext";
 import { isCustomerUser } from "../auth/roleUtils";
 import type { Product, ProductDetail, ReviewSummaryResponse } from "../types";
 
@@ -145,7 +146,7 @@ type DetailTab = "description" | "specifications" | "reviews" | "warranty";
 export function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
+  const { openLoginModal } = useLoginModal();
   const normalizedSlug = (slug ?? "").trim();
   const { user } = useAuth();
   const isCustomer = isCustomerUser(user);
@@ -315,9 +316,13 @@ export function ProductDetailPage() {
     setQty(next);
   };
 
-  const addToCart = async (redirectToCart: boolean) => {
+  const addToCart = async (redirectToCart: boolean, afterAuth = false) => {
     setNotice(null);
     if (out) return;
+    if (!afterAuth && (!user || !isCustomerUser(user))) {
+      openLoginModal({ onSuccess: () => void addToCart(redirectToCart, true) });
+      return;
+    }
     const safeQty = Math.max(1, Math.min(product.quantity || 1, Math.floor(qty || 1)));
     setIsSubmittingPurchase(true);
     try {
@@ -341,13 +346,12 @@ export function ProductDetailPage() {
     await addToCart(false);
   };
 
-  const handleWishlistAction = async () => {
+  const handleWishlistAction = async (afterAuth = false) => {
     if (!product) return;
     setNotice(null);
 
-    if (!user) {
-      const from = location.pathname || `/products/${normalizedSlug}`;
-      navigate(`/login?from=${encodeURIComponent(from)}`);
+    if (!afterAuth && !user) {
+      openLoginModal({ onSuccess: () => void handleWishlistAction(true) });
       return;
     }
 
@@ -373,23 +377,40 @@ export function ProductDetailPage() {
     }
   };
 
+  const submitReviewCore = async () => {
+    if (!product) return;
+    await upsertReview({
+      productId: product.id,
+      rating: reviewRating,
+      comment: reviewComment
+    });
+    const data = await getProductReviews(product.id);
+    setReviewState(data);
+    setReviewMessage("Đã gửi đánh giá.");
+  };
+
   const handleSubmitReview = async (event: FormEvent) => {
     event.preventDefault();
     if (!product) return;
     setReviewMessage(null);
     if (!isCustomer) {
+      if (!user) {
+        openLoginModal({
+          onSuccess: async () => {
+            try {
+              await submitReviewCore();
+            } catch (e) {
+              setReviewMessage(toErrorMessage(e, "Không gửi được đánh giá."));
+            }
+          }
+        });
+        return;
+      }
       setReviewMessage("Vui lòng đăng nhập tài khoản mua hàng để đánh giá.");
       return;
     }
     try {
-      await upsertReview({
-        productId: product.id,
-        rating: reviewRating,
-        comment: reviewComment
-      });
-      const data = await getProductReviews(product.id);
-      setReviewState(data);
-      setReviewMessage("Đã gửi đánh giá.");
+      await submitReviewCore();
     } catch (e) {
       setReviewMessage(toErrorMessage(e, "Không gửi được đánh giá."));
     }

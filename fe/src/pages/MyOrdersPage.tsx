@@ -81,8 +81,8 @@ export function MyOrdersPage() {
           <p className="subtext">Theo dõi trạng thái và xem chi tiết từng đơn hàng.</p>
         </div>
         <div className="page-header-actions">
-          <Link to="/customer" className="primary-link">
-            Về trang khách hàng
+          <Link to="/profile" className="primary-link">
+            Thông tin khách hàng
           </Link>
           <Link to="/products" className="primary-link">
             Mua thêm

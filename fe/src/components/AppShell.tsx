@@ -11,6 +11,8 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getCategories } from "../api/catalog";
 import { useAuth } from "../auth/AuthContext";
+import { useLoginModal } from "../auth/LoginModalContext";
+import { useRegisterModal } from "../auth/RegisterModalContext";
 import {
   canAccessAdminArea,
   getDefaultRouteForUser,
@@ -26,7 +28,7 @@ type IconProps = {
 
 type FooterColumn = {
   title: string;
-  links: Array<{ label: string; href: string }>;
+  links: Array<{ label: string; href: string; openLoginModal?: boolean; openRegisterModal?: boolean }>;
 };
 
 type AccountMenuAction = "logout";
@@ -37,6 +39,10 @@ type AccountMenuItem = {
   icon: ReactNode;
   to?: string;
   action?: AccountMenuAction;
+  /** Opens compact login modal instead of navigating to `/login`. */
+  openLoginModal?: boolean;
+  /** Opens compact register modal instead of navigating to `/register`. */
+  openRegisterModal?: boolean;
 };
 
 const footerColumnsBase: FooterColumn[] = [
@@ -197,6 +203,8 @@ function IconSearch(props: IconProps) {
 
 export function AppShell() {
   const { user, logout } = useAuth();
+  const { openLoginModal } = useLoginModal();
+  const { openRegisterModal } = useRegisterModal();
   const navigate = useNavigate();
   const location = useLocation();
   const categoryMenuRef = useRef<HTMLElement | null>(null);
@@ -306,13 +314,13 @@ export function AppShell() {
         {
           key: "login",
           label: "Đăng nhập",
-          to: "/login",
+          openLoginModal: true,
           icon: <IconArrowOut className="corsair-icon" />
         },
         {
           key: "register",
           label: "Đăng ký",
-          to: "/register",
+          openRegisterModal: true,
           icon: <IconUser className="corsair-icon" />
         }
       ];
@@ -324,7 +332,7 @@ export function AppShell() {
       items.push(
         {
           key: "account-info",
-          label: "Thông tin tài khoản",
+          label: "Thông tin khách hàng",
           to: "/profile",
           icon: <IconUser className="corsair-icon" />
         },
@@ -397,15 +405,16 @@ export function AppShell() {
   }, [dashboardPath, isAdminOrOwner, isLoggedIn, isOwner, showCustomerLinks, showStaffNav]);
 
   const footerColumns = useMemo<FooterColumn[]>(() => {
-    const accountLinks = isLoggedIn && showCustomerLinks
+    const accountLinks: FooterColumn["links"] =
+      isLoggedIn && showCustomerLinks
       ? [
           { label: "Wishlist", href: "/wishlist" },
           { label: "Đơn hàng của tôi", href: "/orders" },
-          { label: "Thông tin tài khoản", href: "/profile" }
+          { label: "Thông tin khách hàng", href: "/profile" }
         ]
       : [
-          { label: "Đăng nhập", href: "/login" },
-          { label: "Đăng ký", href: "/register" }
+          { label: "Đăng nhập", href: "/login", openLoginModal: true },
+          { label: "Đăng ký", href: "/register", openRegisterModal: true }
         ];
 
     return [
@@ -627,15 +636,7 @@ export function AppShell() {
                     Quan tri
                   </span>
                 </NavLink>
-              ) : null}
-              {showCustomerLinks ? (
-                <NavLink to="/customer" className={navClassName}>
-                  <span className="corsair-link-inner">
-                    <IconUser className="corsair-icon" />
-                    Khách hàng
-                  </span>
-                </NavLink>
-              ) : null}
+              ) : null}     
               {showCustomerLinks ? (
                 <NavLink to="/cart" className={navClassName}>
                   <span className="corsair-link-inner">
@@ -710,7 +711,39 @@ export function AppShell() {
                     onKeyDown={handleAccountMenuKeyDown}
                   >
                     {accountMenuItems.map((item) =>
-                      item.to ? (
+                      item.openLoginModal ? (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className="corsair-dashboard-item corsair-account-action"
+                          data-account-menu-item="true"
+                          onClick={() => {
+                            closeAccountMenu();
+                            openLoginModal();
+                          }}
+                        >
+                          <span className="corsair-link-inner">
+                            {item.icon}
+                            {item.label}
+                          </span>
+                        </button>
+                      ) : item.openRegisterModal ? (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className="corsair-dashboard-item corsair-account-action"
+                          data-account-menu-item="true"
+                          onClick={() => {
+                            closeAccountMenu();
+                            openRegisterModal();
+                          }}
+                        >
+                          <span className="corsair-link-inner">
+                            {item.icon}
+                            {item.label}
+                          </span>
+                        </button>
+                      ) : item.to ? (
                         <Link
                           key={item.key}
                           to={item.to}
@@ -829,7 +862,25 @@ export function AppShell() {
               <ul>
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.href}>{link.label}</Link>
+                    {"openLoginModal" in link && link.openLoginModal ? (
+                      <button
+                        type="button"
+                        className="shoppro-footer-login-button"
+                        onClick={() => openLoginModal()}
+                      >
+                        {link.label}
+                      </button>
+                    ) : "openRegisterModal" in link && link.openRegisterModal ? (
+                      <button
+                        type="button"
+                        className="shoppro-footer-login-button"
+                        onClick={() => openRegisterModal()}
+                      >
+                        {link.label}
+                      </button>
+                    ) : (
+                      <Link to={link.href}>{link.label}</Link>
+                    )}
                   </li>
                 ))}
               </ul>

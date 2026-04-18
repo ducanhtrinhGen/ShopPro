@@ -129,7 +129,7 @@ export function OrderPage() {
                 Danh sách đơn
               </Link>
               <Link to="/profile" className="primary-link">
-                Cập nhật hồ sơ
+                Thông tin khách hàng
               </Link>
             </div>
           </footer>

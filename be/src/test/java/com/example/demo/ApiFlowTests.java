@@ -476,6 +476,14 @@ class ApiFlowTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id==%d)]".formatted(orderAId)).exists());
 
+        mockMvc.perform(get("/api/customer/profile/dashboard").session(sessionA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(buyerA))
+                .andExpect(jsonPath("$.totalOrders").value(1))
+                .andExpect(jsonPath("$.completedOrders").exists())
+                .andExpect(jsonPath("$.totalSpent").exists())
+                .andExpect(jsonPath("$.recentOrders[0].id").value(orderAId));
+
         mockMvc.perform(get("/api/orders/{id}", orderAId).session(sessionA))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(orderAId))

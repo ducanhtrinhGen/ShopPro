@@ -1081,9 +1081,9 @@ export function AdminDashboardPage() {
               <h3>Pham vi Admin hang ngay</h3>
               <ul>
                 <li>CRUD sản phẩm, danh mục, thương hiệu.</li>
-                <li>Xem va cap nhat trang thai don hang.</li>
-                <li>Kiem tra ton kho thap va loi du lieu van hanh.</li>
-                <li>Quan ly noi dung website theo quy trinh.</li>
+                <li>Xem và cập nhật trang thai don hang.</li>
+                <li>Kiểm tra tồn kho thấp và lỗi dữ liệu vận hành.</li>
+                <li>Quản lý nội dung website theo quy trình.</li>
               </ul>
             </article>           
           </div>
@@ -1091,11 +1091,11 @@ export function AdminDashboardPage() {
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Ton kho va chat luong du lieu</h2>
+            <h2>Tồn kho và chất lượng dữ liệu</h2>
           </div>
 
           {isLoadingOps ? (
-            <p className="owner-crm-empty">Dang tai du lieu ton kho va loi du lieu...</p>
+            <p className="owner-crm-empty">Đang tải dữ liệu tồn kho và lỗi dữ liệu...</p>
           ) : null}
 
           {opsError ? <p className="owner-crm-empty">{opsError}</p> : null}
@@ -1103,7 +1103,7 @@ export function AdminDashboardPage() {
           {!isLoadingOps && !opsError ? (
             <div className="owner-crm-admin-dual">
               <article className="owner-crm-admin-block">
-                <h3>Canh bao ton kho thap</h3>
+                <h3>Cảnh báo tồn kho thấp</h3>
                 {lowStock.length ? (
                   <ul>
                     {lowStock.slice(0, 8).map((item) => (
@@ -1113,12 +1113,12 @@ export function AdminDashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p>Khong co san pham nao duoi nguong ton kho.</p>
+                  <p>Không có sản phẩm nào dưới ngưỡng tồn kho.</p>
                 )}
               </article>
 
               <article className="owner-crm-admin-block">
-                <h3>Loi du lieu can xu ly</h3>
+                <h3>Lỗi dữ liệu cần xử lý</h3>
                 {dataIssues.length ? (
                   <ul>
                     {dataIssues.slice(0, 8).map((issue, index) => (
@@ -1128,7 +1128,7 @@ export function AdminDashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p>Khong phat hien loi du lieu nghiem trong.</p>
+                  <p>Không phát hiện lỗi dữ liệu nghiêm trọng.</p>
                 )}
               </article>
             </div>
@@ -1147,11 +1147,11 @@ export function AdminDashboardPage() {
             <strong>{stats.categoryTotal}</strong>
           </article>
           <article>
-            <span>danh muc dang loc</span>
+            <span>Danh mục đang lọc</span>
             <strong>{filteredCategories.length}</strong>
           </article>
           <article>
-            <span>danh muc dang chon</span>
+            <span>Danh mục đang chọn</span>
             <strong>{selectedCategory ? selectedCategory.name : "Tat ca"}</strong>
           </article>
           <article>
@@ -1165,7 +1165,7 @@ export function AdminDashboardPage() {
             <h2>danh muc hien co ({filteredCategories.length})</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={() => setSelectedCategoryId(null)}>
-                Hien tat ca danh muc
+                Hiển thị tất cả danh mục
               </button>
             </div>
           </div>
@@ -1175,9 +1175,9 @@ export function AdminDashboardPage() {
               <table className="owner-crm-table">
                 <thead>
                   <tr>
-                    <th>Ma danh muc</th>
-                    <th>Ten danh muc</th>
-                    <th>Hanh dong</th>
+                    <th>Mã danh mục</th>
+                    <th>Tên danh mục</th>
+                    <th>Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1300,12 +1300,12 @@ export function AdminDashboardPage() {
               </label>
 
               <label>
-                <span>danh mục *</span>
+                <span>DDanh mục *</span>
                 <select
                   value={productForm.categoryId}
                   onChange={(event) => handleProductFieldChange("categoryId", event.target.value)}
                 >
-                  <option value="">Chon danh muc</option>
+                  <option value="">Chọn danh mụục</option>
                   {stats.categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -1316,7 +1316,7 @@ export function AdminDashboardPage() {
               <label>
                 <span>thương hiệu *</span>
                 <select value={productForm.brandId} onChange={(event) => handleProductFieldChange("brandId", event.target.value)}>
-                  <option value="">Chon thuong hieu</option>
+                  <option value="">Chọn thương hiệu</option>
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
@@ -1326,7 +1326,7 @@ export function AdminDashboardPage() {
               </label>
 
               <label>
-                <span>Gia niem yet *</span>
+                <span>Giá niêm yết *</span>
                 <input
                   type="number"
                   min={0}

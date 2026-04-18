@@ -83,7 +83,7 @@ export function WishlistPage() {
         <div className="page-header-actions">
           <Link to="/products">Mở catalog</Link>
           <Link to="/orders">Đơn hàng</Link>
-          <Link to="/profile">Tài khoản</Link>
+          <Link to="/profile">Thông tin khách hàng</Link>
         </div>
       </header>
 

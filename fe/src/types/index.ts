@@ -202,6 +202,14 @@ export type CustomerProfile = {
   address: string | null;
 };
 
+/** GET /api/customer/profile/dashboard — profile plus order aggregates */
+export type CustomerProfileDashboard = CustomerProfile & {
+  totalOrders: number;
+  completedOrders: number;
+  totalSpent: number;
+  recentOrders: CustomerOrderSummary[];
+};
+
 export type OwnerRecentOrder = {
   id: number;
   createdAt: string;

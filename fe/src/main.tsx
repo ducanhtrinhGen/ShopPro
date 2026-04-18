@@ -3,6 +3,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthContext";
+import { LoginModalProvider } from "./auth/LoginModalContext";
+import { RegisterModalProvider } from "./auth/RegisterModalContext";
+import { LoginModal } from "./components/LoginModal";
+import { RegisterModal } from "./components/RegisterModal";
 import "./styles/global.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -14,7 +18,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       }}
     >
       <AuthProvider>
-        <App />
+        <LoginModalProvider>
+          <RegisterModalProvider>
+            <App />
+            <LoginModal />
+            <RegisterModal />
+          </RegisterModalProvider>
+        </LoginModalProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

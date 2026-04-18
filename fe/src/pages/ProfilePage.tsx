@@ -1,10 +1,16 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
 import { changeAuthenticatedPassword } from "../api/authPassword";
-import { getCustomerProfileDashboard, updateCustomerProfile } from "../api/customer";
+import { getCustomerProfileDashboard, getMyOrders, updateCustomerProfile } from "../api/customer";
+import { getMyWishlist, removeWishlist } from "../api/wishlist";
+import { useAuth } from "../auth/AuthContext";
+import { AccountMetricsRow } from "../components/account/AccountMetricsRow";
+import { AccountSidebar, type AccountSectionId, isAccountSectionId } from "../components/account/AccountSidebar";
 import { validatePasswordRules } from "../utils/passwordRules";
-import type { CustomerProfileDashboard } from "../types";
+import type { CustomerOrderSummary, CustomerProfileDashboard, WishlistItem } from "../types";
+
+const DEFAULT_SECTION: AccountSectionId = "overview";
 
 const moneyFormatter = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -44,7 +50,35 @@ type ProfileForm = {
   address: string;
 };
 
+function isOutOfStock(item: WishlistItem) {
+  return item.quantity <= 0;
+}
+
 export function ProfilePage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const tabParam = searchParams.get("tab");
+  const activeSection: AccountSectionId = isAccountSectionId(tabParam) ? tabParam : DEFAULT_SECTION;
+
+  const setSection = useCallback(
+    (sectionId: AccountSectionId) => {
+      setSearchParams({ tab: sectionId }, { replace: true });
+    },
+    [setSearchParams]
+  );
+
+  useEffect(() => {
+    if (!tabParam) {
+      setSearchParams({ tab: DEFAULT_SECTION }, { replace: true });
+      return;
+    }
+    if (!isAccountSectionId(tabParam)) {
+      setSearchParams({ tab: DEFAULT_SECTION }, { replace: true });
+    }
+  }, [tabParam, setSearchParams]);
+
   const [dashboard, setDashboard] = useState<CustomerProfileDashboard | null>(null);
   const [form, setForm] = useState<ProfileForm>({
     fullName: "",
@@ -64,6 +98,18 @@ export function ProfilePage() {
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [pwdMessage, setPwdMessage] = useState<string | null>(null);
   const [isPwdSaving, setIsPwdSaving] = useState(false);
+
+  const [allOrders, setAllOrders] = useState<CustomerOrderSummary[]>([]);
+  const [allOrdersLoading, setAllOrdersLoading] = useState(false);
+  const [allOrdersError, setAllOrdersError] = useState<string | null>(null);
+  const [allOrdersKeyword, setAllOrdersKeyword] = useState("");
+
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
+  const [wishlistMessage, setWishlistMessage] = useState<string | null>(null);
+  const [wishlistKeyword, setWishlistKeyword] = useState("");
+  const [removingWishlistId, setRemovingWishlistId] = useState<number | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     setIsLoading(true);
@@ -89,9 +135,70 @@ export function ProfilePage() {
     void fetchDashboard();
   }, [fetchDashboard]);
 
+  useEffect(() => {
+    if (activeSection !== "all-orders") return;
+    let cancelled = false;
+    setAllOrdersLoading(true);
+    setAllOrdersError(null);
+    void (async () => {
+      try {
+        const data = await getMyOrders();
+        if (!cancelled) setAllOrders(data);
+      } catch (e) {
+        if (!cancelled) {
+          setAllOrders([]);
+          setAllOrdersError(toErrorMessage(e, "Không thể tải danh sách đơn hàng."));
+        }
+      } finally {
+        if (!cancelled) setAllOrdersLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== "wishlist") return;
+    let cancelled = false;
+    setWishlistLoading(true);
+    setWishlistError(null);
+    setWishlistMessage(null);
+    void (async () => {
+      try {
+        const data = await getMyWishlist();
+        if (!cancelled) setWishlistItems(data);
+      } catch (e) {
+        if (!cancelled) {
+          setWishlistItems([]);
+          setWishlistError(toErrorMessage(e, "Không tải được wishlist."));
+        }
+      } finally {
+        if (!cancelled) setWishlistLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSection]);
+
   const profile = dashboard;
   const displayName = profile?.fullName?.trim() || profile?.username || "Khách hàng";
   const hasAddress = Boolean(profile?.address?.trim());
+
+  const filteredAllOrders = useMemo(() => {
+    const k = allOrdersKeyword.trim().toLowerCase();
+    if (!k) return allOrders;
+    return allOrders.filter(
+      (o) => String(o.id).includes(k) || normalizeStatus(o.status).includes(k.toUpperCase())
+    );
+  }, [allOrders, allOrdersKeyword]);
+
+  const filteredWishlist = useMemo(() => {
+    const q = wishlistKeyword.trim().toLowerCase();
+    if (!q) return wishlistItems;
+    return wishlistItems.filter((p) => p.name.toLowerCase().includes(q));
+  }, [wishlistItems, wishlistKeyword]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -159,47 +266,74 @@ export function ProfilePage() {
     }
   };
 
-  return (
-    <section className="panel">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Tài khoản</p>
-          <h2>Thông tin khách hàng</h2>
-          <p className="subtext">Xem tóm tắt đơn hàng, cập nhật thông tin giao hàng và bảo mật tài khoản.</p>
-        </div>
-        <div className="page-header-actions">
-          <Link to="/customer" className="primary-link">
-            Trang tổng quan khách hàng
-          </Link>
-          <Link to="/orders" className="primary-link">
-            Tất cả đơn hàng
-          </Link>
-        </div>
-      </header>
+  const handleRemoveWishlist = async (productId: number) => {
+    setRemovingWishlistId(productId);
+    setWishlistMessage(null);
+    try {
+      await removeWishlist(productId);
+      setWishlistItems((prev) => prev.filter((p) => p.productId !== productId));
+      setWishlistMessage("Đã gỡ khỏi wishlist.");
+    } catch (e) {
+      setWishlistMessage(toErrorMessage(e, "Không gỡ được wishlist."));
+    } finally {
+      setRemovingWishlistId(null);
+    }
+  };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/", { replace: true });
+  };
+
+  const renderOrderTable = (orders: CustomerOrderSummary[]) => (
+    <div className="account-table-wrap">
+      <table className="account-order-table">
+        <thead>
+          <tr>
+            <th>Mã đơn hàng</th>
+            <th>Ngày đặt</th>
+            <th>Sản phẩm</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order.id}>
+              <td data-label="Mã đơn">
+                <strong>#{order.id}</strong>
+              </td>
+              <td data-label="Ngày">{new Date(order.createdAt).toLocaleDateString("vi-VN")}</td>
+              <td data-label="Sản phẩm">{order.totalQuantity} sản phẩm</td>
+              <td data-label="Tổng">{moneyFormatter.format(order.totalAmount)}</td>
+              <td data-label="Trạng thái">{toStatusLabel(order.status)}</td>
+              <td className="account-order-actions" data-label="">
+                <Link to={`/orders/${order.id}`} className="primary-link">
+                  Chi tiết
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  return (
+    <div className="panel account-page">
       {isLoading ? (
-        <div className="customer-profile-loading" aria-busy="true" aria-live="polite">
+        <div className="account-page-loading" aria-busy="true" aria-live="polite">
           <div className="loading-block">
             <div className="loading-ring" />
             <p>Đang tải hồ sơ...</p>
           </div>
-          <div className="customer-profile-skeleton" aria-hidden="true">
-            <div className="customer-profile-skeleton-hero">
-              <div className="customer-profile-skeleton-avatar" />
-              <div className="customer-profile-skeleton-lines">
-                <div className="customer-profile-skeleton-line customer-profile-skeleton-line-lg" />
-                <div className="customer-profile-skeleton-line customer-profile-skeleton-line-md" />
-                <div className="customer-profile-skeleton-line customer-profile-skeleton-line-sm" />
-              </div>
-            </div>
-            <div className="customer-profile-skeleton-stats">
-              <div className="customer-profile-skeleton-stat" />
-              <div className="customer-profile-skeleton-stat" />
-              <div className="customer-profile-skeleton-stat" />
-            </div>
-            <div className="customer-profile-skeleton-recent">
-              <div className="customer-profile-skeleton-line customer-profile-skeleton-line-md" />
-              <div className="customer-profile-skeleton-table" />
+          <div className="account-page-skeleton" aria-hidden="true">
+            <div className="account-page-skeleton-sidebar" />
+            <div className="account-page-skeleton-main">
+              <div className="account-page-skeleton-bar" />
+              <div className="account-page-skeleton-bar short" />
+              <div className="account-page-skeleton-panel" />
             </div>
           </div>
         </div>
@@ -221,233 +355,322 @@ export function ProfilePage() {
       ) : null}
 
       {!isLoading && profile ? (
-        <>
-          <div className="customer-profile-hero">
-            <div className="customer-profile-identity">
-              <div className="customer-profile-avatar" aria-hidden="true">
-                {(displayName.slice(0, 1) || "?").toUpperCase()}
-              </div>
+        <div className="account-page-layout">
+          <AccountSidebar
+            displayName={displayName}
+            username={profile.username}
+            emailPreview={profile.email}
+            activeSection={activeSection}
+            onSelectSection={setSection}
+          />
+
+          <div className="account-page-main">
+            <header className="account-panel-header">
               <div>
-                <h3 className="customer-profile-name">{displayName}</h3>
-                <p className="customer-profile-meta">
-                  <span className="customer-profile-username">@{profile.username}</span>
-                  {profile.email ? (
-                    <span className="customer-profile-chip">{profile.email}</span>
-                  ) : (
-                    <span className="customer-profile-chip customer-profile-chip-muted">Chưa có email</span>
-                  )}
-                </p>
-                {profile.phone ? (
-                  <p className="customer-profile-phone">{profile.phone}</p>
-                ) : (
-                  <p className="customer-profile-phone-muted">Chưa có số điện thoại</p>
-                )}
+                <h1 className="account-panel-title">Bảng thông tin của tôi</h1>
+                <p className="account-panel-lead">Quản lý thông tin cá nhân và đơn hàng.</p>
               </div>
-            </div>
-            <div className="customer-profile-address-preview">
-              <p className="customer-profile-address-label">Địa chỉ giao hàng</p>
-              {hasAddress ? (
-                <p className="customer-profile-address-text">{profile.address}</p>
-              ) : (
-                <p className="customer-profile-address-empty">Chưa cập nhật — thêm bên dưới để checkout nhanh hơn.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="customer-profile-stats" aria-live="polite">
-            <article className="customer-profile-stat-card">
-              <span className="customer-profile-stat-label">Tổng đơn hàng</span>
-              <strong className="customer-profile-stat-value">{profile.totalOrders}</strong>
-            </article>
-            <article className="customer-profile-stat-card">
-              <span className="customer-profile-stat-label">Đơn hoàn tất</span>
-              <strong className="customer-profile-stat-value">{profile.completedOrders}</strong>
-            </article>
-            <article className="customer-profile-stat-card">
-              <span className="customer-profile-stat-label">Tổng chi tiêu</span>
-              <strong className="customer-profile-stat-value customer-profile-stat-money">
-                {moneyFormatter.format(profile.totalSpent)}
-              </strong>
-            </article>
-          </div>
-
-          <nav className="customer-profile-quick-links" aria-label="Liên kết nhanh">
-            <a href="#customer-profile-forms" className="customer-profile-quick-link">
-              Chỉnh sửa hồ sơ
-            </a>
-            <Link to="/orders" className="customer-profile-quick-link">
-              Đơn hàng
-            </Link>
-            <Link to="/wishlist" className="customer-profile-quick-link">
-              Wishlist
-            </Link>
-            <a href="#customer-profile-address" className="customer-profile-quick-link">
-              {hasAddress ? "Địa chỉ" : "Thêm địa chỉ"}
-            </a>
-          </nav>
-
-          <section className="customer-profile-recent" aria-labelledby="recent-orders-heading">
-            <div className="customer-profile-recent-head">
-              <h3 id="recent-orders-heading">Đơn hàng gần đây</h3>
-              <Link to="/orders" className="primary-link">
-                Xem tất cả
-              </Link>
-            </div>
-            {profile.recentOrders.length === 0 ? (
-              <div className="empty-message customer-profile-recent-empty">
-                <p>
-                  <strong>Chưa có đơn hàng gần đây</strong>
-                </p>
-                <p>Khi bạn đặt hàng, các đơn mới nhất sẽ hiển thị tại đây.</p>
-                <p>
-                  <Link to="/products" className="primary-link">
-                    Khám phá sản phẩm
-                  </Link>
-                </p>
-              </div>
-            ) : (
-              <div className="order-table-wrap">
-                <table className="order-table">
-                  <thead>
-                    <tr>
-                      <th>Mã đơn</th>
-                      <th>Ngày</th>
-                      <th>Trạng thái</th>
-                      <th>Tổng</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profile.recentOrders.map((order) => (
-                      <tr key={order.id}>
-                        <td>
-                          <strong>#{order.id}</strong>
-                        </td>
-                        <td>{new Date(order.createdAt).toLocaleDateString("vi-VN")}</td>
-                        <td>{toStatusLabel(order.status)}</td>
-                        <td>
-                          <strong>{moneyFormatter.format(order.totalAmount)}</strong>
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          <Link to={`/orders/${order.id}`} className="primary-link">
-                            Chi tiết
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </>
-      ) : null}
-
-      {!isLoading && profile ? (
-        <>
-          <section id="customer-profile-forms" className="customer-profile-forms-section">
-            <header className="page-header" style={{ marginTop: "1.25rem" }}>
-              <div>
-                <p className="eyebrow">Hồ sơ</p>
-                <h3 style={{ margin: 0 }}>Chỉnh sửa thông tin</h3>
-                <p className="subtext">Cập nhật thông tin giao hàng cơ bản để checkout nhanh hơn.</p>
-              </div>
+              <button type="button" className="account-logout-link" onClick={() => void handleLogout()}>
+                Đăng xuất
+              </button>
             </header>
 
-            {message ? <p className="inline-notice">{message}</p> : null}
-            {saveError ? (
-              <p className="form-error" role="alert">
-                {saveError}
-              </p>
+            {activeSection === "edit-profile" && (message || saveError) ? (
+              <div className="account-page-flash" role="status" aria-live="polite">
+                {message ? <p className="inline-notice account-inline-msg">{message}</p> : null}
+                {saveError ? (
+                  <p className="form-error account-inline-msg" role="alert">
+                    {saveError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
-            <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
-              <label>
-                Tài khoản
-                <input value={profile.username} disabled />
-              </label>
+            <div className="account-single-panel">
+              <div className="account-card account-section" key={activeSection}>
+                {activeSection === "overview" ? (
+                  <div className="account-overview-dashboard">
+                    <h2 className="account-section-title">Thông tin chung</h2>
+                    <p className="account-section-hint">Tổng hợp tài khoản, đơn hàng và địa chỉ.</p>
 
-              <label>
-                Họ và tên
-                <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} />
-              </label>
+                    <section className="account-overview-block" aria-labelledby="overview-account-heading">
+                      <h3 id="overview-account-heading" className="account-subsection-title">
+                        Thông tin tài khoản
+                      </h3>
+                      <dl className="account-readonly-grid" aria-label="Tóm tắt tài khoản">
+                        <div>
+                          <dt>Họ và tên</dt>
+                          <dd>{profile.fullName?.trim() || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>Email</dt>
+                          <dd>{profile.email?.trim() || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>Số điện thoại</dt>
+                          <dd>{profile.phone?.trim() || "—"}</dd>
+                        </div>
+                      </dl>
+                    </section>
 
-              <label>
-                Email
-                <input
-                  value={form.email}
-                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="email@domain.com"
-                />
-              </label>
+                    <section className="account-overview-block" aria-labelledby="overview-metrics-heading">
+                      <h3 id="overview-metrics-heading" className="account-subsection-title">
+                        Tổng quan đơn hàng
+                      </h3>
+                      <p className="account-subsection-hint">Thống kê theo lịch sử mua hàng.</p>
+                      <AccountMetricsRow
+                        totalOrders={profile.totalOrders}
+                        completedOrders={profile.completedOrders}
+                        totalSpentFormatted={moneyFormatter.format(profile.totalSpent)}
+                      />
+                    </section>
 
-              <label>
-                Số điện thoại
-                <input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
-              </label>
+                    <section className="account-overview-block" aria-labelledby="overview-recent-orders-heading">
+                      <div className="account-section-head account-overview-subhead">
+                        <h3 id="overview-recent-orders-heading" className="account-subsection-title">
+                          Đơn hàng gần đây
+                        </h3>
+                        <button type="button" className="account-section-tab-link" onClick={() => setSection("all-orders")}>
+                          Tất cả đơn hàng
+                        </button>
+                      </div>
+                      <p className="account-subsection-hint">Một vài đơn gần nhất.</p>
+                      {profile.recentOrders.length === 0 ? (
+                        <div className="account-empty-orders">
+                          <p>Bạn chưa có đơn hàng nào gần đây.</p>
+                          <Link to="/products" className="account-btn-outline">
+                            Mua sắm ngay
+                          </Link>
+                        </div>
+                      ) : (
+                        renderOrderTable(profile.recentOrders)
+                      )}
+                    </section>
 
-              <label className="is-wide" id="customer-profile-address">
-                Địa chỉ
-                <input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} />
-              </label>
+                    <section className="account-overview-block" aria-labelledby="overview-address-heading">
+                      <h3 id="overview-address-heading" className="account-subsection-title">
+                        Sổ địa chỉ
+                      </h3>
+                      <p className="account-subsection-hint">Địa chỉ giao hàng mặc định khi đặt hàng.</p>
+                      <div className="account-address-block">
+                        {hasAddress ? (
+                          <p className="account-address-text">{profile.address?.trim()}</p>
+                        ) : (
+                          <p className="account-address-empty">Chưa có địa chỉ giao hàng.</p>
+                        )}
+                        <button
+                          type="button"
+                          className="account-address-cta"
+                          onClick={() => {
+                            setSection("edit-profile");
+                            window.setTimeout(() => {
+                              document.getElementById("customer-profile-address")?.focus({ preventScroll: true });
+                            }, 0);
+                          }}
+                        >
+                          Chỉnh sửa địa chỉ
+                        </button>
+                      </div>
+                    </section>
+                  </div>
+                ) : null}
 
-              <button type="submit" disabled={isSaving}>
-                {isSaving ? "Đang lưu..." : "Lưu hồ sơ"}
-              </button>
-            </form>
-          </section>
+                {activeSection === "edit-profile" ? (
+                  <>
+                    <h2 className="account-section-title">Chỉnh sửa hồ sơ</h2>
+                    <p className="account-section-hint">Cập nhật thông tin liên hệ và địa chỉ nhận hàng.</p>
+                    <form className="account-form account-form--profile" onSubmit={(e) => void handleSubmit(e)}>
+                      <label>
+                        Tài khoản
+                        <input value={profile.username} disabled />
+                      </label>
+                      <label>
+                        Họ và tên
+                        <input
+                          value={form.fullName}
+                          onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        Email
+                        <input
+                          value={form.email}
+                          onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                          placeholder="email@domain.com"
+                        />
+                      </label>
+                      <label>
+                        Số điện thoại
+                        <input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
+                      </label>
+                      <label htmlFor="customer-profile-address">
+                        Địa chỉ
+                        <input
+                          id="customer-profile-address"
+                          value={form.address}
+                          onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                          placeholder="Số nhà, đường, phường/xã, tỉnh/thành..."
+                        />
+                      </label>
+                      <div className="account-form-actions">
+                        <button type="submit" className="account-btn-primary" disabled={isSaving}>
+                          {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                ) : null}
 
-          <hr className="profile-divider" />
-          <header className="page-header" style={{ marginTop: "1.5rem" }}>
-            <div>
-              <p className="eyebrow">Bảo mật</p>
-              <h3 style={{ margin: 0 }}>Đổi mật khẩu</h3>
-              <p className="subtext">Nhập mật khẩu hiện tại và mật khẩu mới (tối thiểu 8 ký tự, có chữ cái và số).</p>
+                {activeSection === "change-password" ? (
+                  <>
+                    <h2 className="account-section-title">Đổi mật khẩu</h2>
+                    <p className="account-section-hint">Mật khẩu tối thiểu 8 ký tự, có chữ cái và số.</p>
+                    {pwdError ? <p className="form-error">{pwdError}</p> : null}
+                    {pwdMessage ? <p className="inline-notice">{pwdMessage}</p> : null}
+                    <form className="account-form" onSubmit={(e) => void handlePasswordSubmit(e)}>
+                      <label>
+                        Mật khẩu hiện tại
+                        <input
+                          type="password"
+                          value={pwdCurrent}
+                          onChange={(e) => setPwdCurrent(e.target.value)}
+                          autoComplete="current-password"
+                          required
+                        />
+                      </label>
+                      <label>
+                        Mật khẩu mới
+                        <input
+                          type="password"
+                          value={pwdNew}
+                          onChange={(e) => setPwdNew(e.target.value)}
+                          autoComplete="new-password"
+                          minLength={8}
+                          required
+                        />
+                      </label>
+                      <label>
+                        Xác nhận mật khẩu mới
+                        <input
+                          type="password"
+                          value={pwdConfirm}
+                          onChange={(e) => setPwdConfirm(e.target.value)}
+                          autoComplete="new-password"
+                          minLength={8}
+                          required
+                        />
+                      </label>
+                      <div className="account-form-actions">
+                        <button type="submit" className="account-btn-primary" disabled={isPwdSaving}>
+                          {isPwdSaving ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                ) : null}
+
+                {activeSection === "all-orders" ? (
+                  <>
+                    <h2 className="account-section-title">Tất cả đơn hàng</h2>
+                    <p className="account-section-hint">Danh sách đơn hàng của bạn.</p>
+                    <div className="account-panel-toolbar">
+                      <input
+                        type="text"
+                        value={allOrdersKeyword}
+                        onChange={(e) => setAllOrdersKeyword(e.target.value)}
+                        placeholder="Tìm theo mã đơn hoặc trạng thái..."
+                        className="account-panel-toolbar-input"
+                      />
+                    </div>
+                    {allOrdersLoading ? (
+                      <div className="loading-block account-panel-inline-loading">
+                        <div className="loading-ring" />
+                        <p>Đang tải đơn hàng...</p>
+                      </div>
+                    ) : null}
+                    {allOrdersError ? <p className="form-error">{allOrdersError}</p> : null}
+                    {!allOrdersLoading && !allOrdersError && filteredAllOrders.length === 0 ? (
+                      <p className="empty-message account-panel-empty">Bạn chưa có đơn hàng nào.</p>
+                    ) : null}
+                    {!allOrdersLoading && !allOrdersError && filteredAllOrders.length > 0
+                      ? renderOrderTable(filteredAllOrders)
+                      : null}
+                  </>
+                ) : null}
+
+                {activeSection === "wishlist" ? (
+                  <>
+                    <h2 className="account-section-title">Wishlist</h2>
+                    <p className="account-section-hint">Sản phẩm bạn đã lưu.</p>
+                    {wishlistMessage ? <p className="inline-notice">{wishlistMessage}</p> : null}
+                    {wishlistError ? <p className="form-error">{wishlistError}</p> : null}
+                    <div className="account-panel-toolbar">
+                      <input
+                        type="text"
+                        value={wishlistKeyword}
+                        onChange={(e) => setWishlistKeyword(e.target.value)}
+                        placeholder="Tìm trong wishlist..."
+                        className="account-panel-toolbar-input"
+                      />
+                    </div>
+                    {wishlistLoading ? (
+                      <div className="loading-block account-panel-inline-loading">
+                        <div className="loading-ring" />
+                        <p>Đang tải wishlist...</p>
+                      </div>
+                    ) : null}
+                    {!wishlistLoading && !wishlistError && filteredWishlist.length === 0 ? (
+                      <p className="empty-message account-panel-empty">Wishlist đang trống.</p>
+                    ) : null}
+                    {!wishlistLoading && !wishlistError && filteredWishlist.length > 0 ? (
+                      <div className="c-home-grid account-wishlist-grid">
+                        {filteredWishlist.map((item) => {
+                          const out = isOutOfStock(item);
+                          const href = item.slug ? `/products/${item.slug}` : "/products";
+                          const salePrice = item.discountPrice && item.discountPrice > 0 ? item.discountPrice : null;
+                          return (
+                            <article key={item.productId} className="c-home-product-card">
+                              <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
+                                {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
+                                <img src={item.thumbnailUrl ?? item.imageUrl ?? ""} alt={item.name} />
+                              </Link>
+                              <div className="c-home-product-meta">
+                                <h3>
+                                  <Link to={href}>{item.name}</Link>
+                                </h3>
+                                <p>{(item.brandName ? `${item.brandName} • ` : "") + (item.categoryName ?? "Chưa phân loại")}</p>
+                                {salePrice ? (
+                                  <div>
+                                    <strong>{moneyFormatter.format(salePrice)}</strong>{" "}
+                                    <span style={{ textDecoration: "line-through", opacity: 0.7 }}>
+                                      {moneyFormatter.format(item.price)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <strong>{moneyFormatter.format(item.price)}</strong>
+                                )}
+                              </div>
+                              <div className="card-actions c-home-card-actions">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRemoveWishlist(item.productId)}
+                                  disabled={removingWishlistId === item.productId}
+                                >
+                                  {removingWishlistId === item.productId ? "..." : "Gỡ"}
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             </div>
-          </header>
-
-          {pwdError ? <p className="form-error">{pwdError}</p> : null}
-          {pwdMessage ? <p className="inline-notice">{pwdMessage}</p> : null}
-
-          <form className="auth-form" onSubmit={(e) => void handlePasswordSubmit(e)} style={{ maxWidth: "520px" }}>
-            <label>
-              Mật khẩu hiện tại
-              <input
-                type="password"
-                value={pwdCurrent}
-                onChange={(e) => setPwdCurrent(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </label>
-            <label>
-              Mật khẩu mới
-              <input
-                type="password"
-                value={pwdNew}
-                onChange={(e) => setPwdNew(e.target.value)}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </label>
-            <label>
-              Xác nhận mật khẩu mới
-              <input
-                type="password"
-                value={pwdConfirm}
-                onChange={(e) => setPwdConfirm(e.target.value)}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </label>
-            <button type="submit" disabled={isPwdSaving}>
-              {isPwdSaving ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
-            </button>
-          </form>
-        </>
+          </div>
+        </div>
       ) : null}
-    </section>
+    </div>
   );
 }

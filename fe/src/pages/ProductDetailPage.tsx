@@ -346,12 +346,12 @@ export function ProductDetailPage() {
     await addToCart(false);
   };
 
-  const handleWishlistAction = async (afterAuth = false) => {
+  const handleWishlistAction = async () => {
     if (!product) return;
     setNotice(null);
 
-    if (!afterAuth && !user) {
-      openLoginModal({ onSuccess: () => void handleWishlistAction(true) });
+    if (!user) {
+      openLoginModal({ onSuccess: () => void handleWishlistAction() });
       return;
     }
 

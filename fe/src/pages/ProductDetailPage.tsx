@@ -120,21 +120,33 @@ function buildFallbackImage(label: string) {
   )}`;
 }
 
-function productImageList(product: ProductDetail) {
+function normalizeImageValue(value: string | null | undefined) {
+  return (value ?? "").trim();
+}
+
+function productExtraImageList(product: ProductDetail) {
   const unique = new Set<string>();
+  const reserved = new Set(
+    [normalizeImageValue(product.imageUrl), normalizeImageValue(product.thumbnailUrl)].filter(Boolean)
+  );
+
   for (const value of product.galleryImages ?? []) {
-    const normalized = (value ?? "").trim();
-    if (normalized) {
+    const normalized = normalizeImageValue(value);
+    if (normalized && !reserved.has(normalized)) {
       unique.add(normalized);
     }
   }
-  for (const value of [product.imageUrl, product.thumbnailUrl]) {
-    const normalized = (value ?? "").trim();
-    if (normalized) {
-      unique.add(normalized);
-    }
-  }
+
   return Array.from(unique);
+}
+
+function productPrimaryImage(product: ProductDetail) {
+  return (
+    normalizeImageValue(product.imageUrl) ||
+    normalizeImageValue(product.thumbnailUrl) ||
+    productExtraImageList(product)[0] ||
+    null
+  );
 }
 
 function productCardImage(product: Product) {
@@ -224,17 +236,18 @@ export function ProductDetailPage() {
 
   const specs = useMemo(() => parseSpecs(product?.specifications), [product?.specifications]);
   const specPairs = useMemo(() => parseSpecPairs(product?.specifications), [product?.specifications]);
-  const gallery = useMemo(() => (product ? productImageList(product) : []), [product]);
+  const primaryImage = useMemo(() => (product ? productPrimaryImage(product) : null), [product]);
+  const extraGallery = useMemo(() => (product ? productExtraImageList(product) : []), [product]);
 
   useEffect(() => {
     if (!product) {
       return;
     }
     setBrokenImages({});
-    setActiveImage(gallery[0] ?? null);
+    setActiveImage(primaryImage);
     setQty(1);
     setActiveTab("description");
-  }, [gallery, product]);
+  }, [primaryImage, product]);
 
   useEffect(() => {
     if (!product || !user || !isCustomer) {
@@ -296,7 +309,8 @@ export function ProductDetailPage() {
   const percent = productPromoPercent(product);
   const salePrice = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : null;
   const fallbackImage = buildFallbackImage(product.name);
-  const displayImage = activeImage && !brokenImages[activeImage] ? activeImage : gallery.find((item) => !brokenImages[item]) ?? fallbackImage;
+  const imageCandidates = [activeImage, primaryImage, ...extraGallery].filter((image): image is string => Boolean(image));
+  const displayImage = imageCandidates.find((image) => !brokenImages[image]) ?? fallbackImage;
   const supportHighlights = product.supportHighlights?.length
     ? product.supportHighlights
     : [
@@ -461,31 +475,33 @@ export function ProductDetailPage() {
           {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
           {!out && percent ? <span className="c-home-promo-badge">-{percent}%</span> : null}
 
-          <div className="c-product-gallery-thumbs">
-            {(gallery.length ? gallery : [fallbackImage]).map((image, index) => {
-              const preview = brokenImages[image] ? fallbackImage : image;
-              const isActive = displayImage === image || (displayImage === fallbackImage && preview === fallbackImage && index === 0);
-              return (
-                <button
-                  key={`${image}-${index}`}
-                  type="button"
-                  className={isActive ? "is-active" : ""}
-                  onClick={() => setActiveImage(image)}
-                >
-                  <img
-                    src={preview}
-                    alt={`${product.name} ${index + 1}`}
-                    onError={() =>
-                      setBrokenImages((prev) => ({
-                        ...prev,
-                        [image]: true
-                      }))
-                    }
-                  />
-                </button>
-              );
-            })}
-          </div>
+          {extraGallery.length ? (
+            <div className="c-product-gallery-thumbs">
+              {extraGallery.map((image, index) => {
+                const preview = brokenImages[image] ? fallbackImage : image;
+                const isActive = displayImage === image || (displayImage === fallbackImage && preview === fallbackImage && index === 0);
+                return (
+                  <button
+                    key={`${image}-${index}`}
+                    type="button"
+                    className={isActive ? "is-active" : ""}
+                    onClick={() => setActiveImage(image)}
+                  >
+                    <img
+                      src={preview}
+                      alt={`${product.name} ${index + 1}`}
+                      onError={() =>
+                        setBrokenImages((prev) => ({
+                          ...prev,
+                          [image]: true
+                        }))
+                      }
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div className="c-product-detail-buy">

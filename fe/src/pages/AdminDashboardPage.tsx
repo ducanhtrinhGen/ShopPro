@@ -1502,7 +1502,7 @@ export function AdminDashboardPage() {
 
             <div className="owner-crm-product-side">
               <div className="owner-crm-product-preview">
-                <p>Xem truoc anh</p>
+                <p>Xem trước ảnh</p>
                 {productPreviewSrc ? (
                   <img src={productPreviewSrc} alt="preview" />
                 ) : (
@@ -2061,5 +2061,4 @@ export function AdminDashboardPage() {
     </section>
   );
 }
-
 

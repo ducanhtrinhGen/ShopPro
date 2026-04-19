@@ -47,8 +47,9 @@ function ListingProductCard({
   const href = product.slug ? `/products/${product.slug}` : "/products";
   const fallbackImg = productCardFallbackImages[product.id % productCardFallbackImages.length];
 
+  // Do not use `js-reveal` on PLP: global CSS keeps opacity:0 until `.is-visible`, and only HomePage runs that observer.
   return (
-    <article className="c-home-product-card js-reveal">
+    <article className="c-home-product-card plp-product-card">
       <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
         {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
         {!out && percent ? <span className="c-home-promo-badge">-{percent}%</span> : null}

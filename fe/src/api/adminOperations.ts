@@ -138,13 +138,13 @@ export async function uploadAdminProductSubImages(productId: number, files: File
     const plainText = rawBody.trim();
     const looksLikeHtml = plainText.startsWith("<!DOCTYPE") || plainText.startsWith("<html");
     const fallbackFromBody = !looksLikeHtml && plainText ? plainText : undefined;
-    const message = jsonBody?.message ?? fallbackFromBody ?? `Upload anh phu that bai voi ma ${response.status}`;
+    const message = jsonBody?.message ?? fallbackFromBody ?? `Tải ảnh phụ thất bại với mã ${response.status}`;
     throw new ApiRequestError(message, response.status);
   }
 
   const data = parseJsonSafely<AdminProductSubImageItem[]>(rawBody);
   if (!data) {
-    throw new ApiRequestError("Phan hoi upload anh phu khong hop le.", 500);
+    throw new ApiRequestError("Phản hồi tải ảnh phụ không hợp lệ.", 500);
   }
 
   return data;
@@ -189,13 +189,13 @@ export async function uploadAdminCloudinaryImage(file: File, options: Cloudinary
     const plainText = rawBody.trim();
     const looksLikeHtml = plainText.startsWith("<!DOCTYPE") || plainText.startsWith("<html");
     const fallbackFromBody = !looksLikeHtml && plainText ? plainText : undefined;
-    const message = jsonBody?.message ?? fallbackFromBody ?? `Tai anh that bai voi ma ${response.status}`;
+    const message = jsonBody?.message ?? fallbackFromBody ?? `Tải ảnh thất bại với mã ${response.status}`;
     throw new ApiRequestError(message, response.status);
   }
 
   const data = parseJsonSafely<AdminCloudinaryUploadResponse>(rawBody);
   if (!data) {
-    throw new ApiRequestError("Phan hoi upload anh khong hop le.", 500);
+    throw new ApiRequestError("Phản hồi tải ảnh không hợp lệ.", 500);
   }
 
   return data;

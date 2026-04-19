@@ -286,7 +286,7 @@ export function ProductDetailPage() {
         <header className="page-header">
           <h1>Không tìm thấy sản phẩm</h1>
           <p>{error ?? "Sản phẩm không tồn tại hoặc đã bị ẩn."}</p>
-          <Link to="/products">← Quay lại catalog</Link>
+          <Link to="/products">← Quay lại cửa hàng</Link>
         </header>
       </section>
     );
@@ -429,6 +429,12 @@ export function ProductDetailPage() {
           ) : null}
         </p>
         <h1>{product.name}</h1>
+        {product.clearance ? (
+          <div className="c-product-clearance-head">
+            <span className="c-product-clearance-pill">Hàng thanh lý</span>
+            <p>Sản phẩm thuộc chương trình thanh lý với số lượng giới hạn.</p>
+          </div>
+        ) : null}
         <p style={{ opacity: 0.85 }}>
           {product.brandName ? <strong>{product.brandName}</strong> : null}
           {product.brandName && product.categoryName ? " • " : null}
@@ -789,6 +795,7 @@ export function ProductDetailPage() {
                   <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
                     {itemOut ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
                     {!itemOut && itemPercent ? <span className="c-home-promo-badge">-{itemPercent}%</span> : null}
+                    {item.clearance ? <span className="c-home-clearance-badge">Hàng thanh lý</span> : null}
                     <img src={productCardImage(item)} alt={item.name} />
                   </Link>
 

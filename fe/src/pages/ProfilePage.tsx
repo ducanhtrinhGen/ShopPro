@@ -171,7 +171,7 @@ export function ProfilePage() {
       } catch (e) {
         if (!cancelled) {
           setWishlistItems([]);
-          setWishlistError(toErrorMessage(e, "Không tải được wishlist."));
+          setWishlistError(toErrorMessage(e, "Không tải được danh sách yêu thích."));
         }
       } finally {
         if (!cancelled) setWishlistLoading(false);
@@ -272,9 +272,9 @@ export function ProfilePage() {
     try {
       await removeWishlist(productId);
       setWishlistItems((prev) => prev.filter((p) => p.productId !== productId));
-      setWishlistMessage("Đã gỡ khỏi wishlist.");
+      setWishlistMessage("Đã gỡ khỏi danh sách yêu thích.");
     } catch (e) {
-      setWishlistMessage(toErrorMessage(e, "Không gỡ được wishlist."));
+      setWishlistMessage(toErrorMessage(e, "Không gỡ được khỏi danh sách yêu thích."));
     } finally {
       setRemovingWishlistId(null);
     }
@@ -600,7 +600,7 @@ export function ProfilePage() {
 
                 {activeSection === "wishlist" ? (
                   <>
-                    <h2 className="account-section-title">Wishlist</h2>
+                    <h2 className="account-section-title">Yêu thích</h2>
                     <p className="account-section-hint">Sản phẩm bạn đã lưu.</p>
                     {wishlistMessage ? <p className="inline-notice">{wishlistMessage}</p> : null}
                     {wishlistError ? <p className="form-error">{wishlistError}</p> : null}
@@ -609,18 +609,18 @@ export function ProfilePage() {
                         type="text"
                         value={wishlistKeyword}
                         onChange={(e) => setWishlistKeyword(e.target.value)}
-                        placeholder="Tìm trong wishlist..."
+                        placeholder="Tìm trong danh sách yêu thích..."
                         className="account-panel-toolbar-input"
                       />
                     </div>
                     {wishlistLoading ? (
                       <div className="loading-block account-panel-inline-loading">
                         <div className="loading-ring" />
-                        <p>Đang tải wishlist...</p>
+                        <p>Đang tải danh sách yêu thích...</p>
                       </div>
                     ) : null}
                     {!wishlistLoading && !wishlistError && filteredWishlist.length === 0 ? (
-                      <p className="empty-message account-panel-empty">Wishlist đang trống.</p>
+                      <p className="empty-message account-panel-empty">Danh sách yêu thích đang trống.</p>
                     ) : null}
                     {!wishlistLoading && !wishlistError && filteredWishlist.length > 0 ? (
                       <div className="c-home-grid account-wishlist-grid">

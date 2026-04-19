@@ -14,7 +14,7 @@ export type MegaMenuGroupTitleIcon = "components" | "gaming" | "display" | "acce
 export type MegaMenuGroup = {
   id: string;
   title: string;
-  /** Icon cạnh tiêu đề nhóm — optional cho API-driven menu */
+  /** Icon cạnh tiêu đề nhóm - optional cho API-driven menu */
   titleIcon?: MegaMenuGroupTitleIcon;
   items: MegaMenuLinkItem[];
 };
@@ -24,14 +24,14 @@ export type FeaturedMenuCard = {
   description: string;
   href: string;
   ctaLabel: string;
-  /** Nhãn phụ (vd. "Gợi ý", "Khuyến mãi") — API có thể gán động */
+  /** Nhãn phụ (vd. "Gợi ý", "Khuyến mãi") - API có thể gán động */
   kicker?: string;
   /** Badge góc (vd. "Nổi bật", "Mới", "Hot") */
   badge?: string;
 };
 
 /**
- * Gói cấu hình mega menu — sau này có thể thay bằng `fetch('/api/navigation/mega')`.
+ * Gói cấu hình mega menu - sau này có thể thay bằng `fetch('/api/navigation/mega')`.
  * Component chỉ đọc `groups` + `featured`, không hardcode cấu trúc cột trong JSX.
  */
 export type MegaMenuConfig = {
@@ -49,38 +49,43 @@ function norm(s: string) {
 
 /**
  * Gắn `categoryId` vào href khi tìm được category khớp `categoryHint`.
- * Giữ nguyên href tĩnh nếu không khớp.
+ * Giữ nguyên query đang có sẵn như `clearanceOnly=1`, `keyword`, `sort`...
  */
 export function applyCategoryHintsToMegaMenu(groups: MegaMenuGroup[], categories: Category[]): MegaMenuGroup[] {
   if (!categories.length) return groups;
 
-  return groups.map((g) => ({
-    ...g,
-    items: g.items.map((item) => {
+  return groups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => {
       if (!item.categoryHint) return item;
       const hint = norm(item.categoryHint);
-      const match = categories.find((c) => {
-        const n = norm(c.name);
-        return n === hint || n.includes(hint) || hint.includes(n);
+      const match = categories.find((category) => {
+        const categoryName = norm(category.name);
+        return categoryName === hint || categoryName.includes(hint) || hint.includes(categoryName);
       });
+
       if (!match) return item;
+
+      const [pathname, search = ""] = item.href.split("?");
+      const params = new URLSearchParams(search);
+      params.set("categoryId", String(match.id));
+
       return {
         ...item,
-        href: `/products?categoryId=${match.id}`
+        href: `${pathname}?${params.toString()}`
       };
     })
   }));
 }
 
-/** Nội dung khối nổi bật trong mega menu — có thể map từ CMS / API. */
+/** Nội dung khối nổi bật trong mega menu - có thể map từ CMS / API. */
 export const MEGA_MENU_FEATURED: FeaturedMenuCard = {
-  kicker: "Khám phá",
-  badge: "Nổi bật",
-  title: "Build PC & gaming setup",
-  description:
-    "Tư vấn cấu hình theo ngân sách, linh kiện tương thích và ưu đãi trong tuần — phù hợp gaming, làm việc và sáng tạo.",
-  href: "/contact",
-  ctaLabel: "Nhận tư vấn build"
+  kicker: "Sản phẩm giá tốt",
+  badge: "HOT",
+  title: "Săn deal thanh lý",
+  description: "Tổng hợp sản phẩm giá tốt, số lượng có hạn và được cập nhật liên tục theo từng đợt xả kho.",
+  href: "/products?clearanceOnly=1",
+  ctaLabel: "Xem tất cả hàng thanh lý"
 };
 
 export const MEGA_MENU_GROUPS: MegaMenuGroup[] = [
@@ -134,6 +139,21 @@ export const MEGA_MENU_GROUPS: MegaMenuGroup[] = [
       { label: "Giá đỡ", href: "/products?keyword=giá đỡ", categoryHint: "giá" },
       { label: "Phụ kiện bàn làm việc", href: "/products?keyword=phụ kiện", categoryHint: "phụ kiện" },
       { label: "Thiết bị lưu trữ ngoài", href: "/products?keyword=ổ ngoài", categoryHint: "lưu trữ" }
+    ]
+  },
+  {
+    id: "clearance",
+    title: "Hàng thanh lý",
+    titleIcon: "spark",
+    items: [
+      { label: "Tất cả hàng thanh lý", href: "/products?clearanceOnly=1", badge: "HOT" },
+      { label: "Laptop thanh lý", href: "/products?clearanceOnly=1&keyword=laptop", categoryHint: "laptop" },
+      { label: "PC thanh lý", href: "/products?clearanceOnly=1&keyword=pc" },
+      { label: "Màn hình thanh lý", href: "/products?clearanceOnly=1&keyword=màn hình", categoryHint: "màn hình" },
+      { label: "Linh kiện thanh lý", href: "/products?clearanceOnly=1&keyword=linh kiện" },
+      { label: "Gear thanh lý", href: "/products?clearanceOnly=1&keyword=gaming" },
+      { label: "Apple thanh lý", href: "/products?clearanceOnly=1&keyword=apple", categoryHint: "apple" },
+      { label: "Open-box & xả kho", href: "/products?clearanceOnly=1&keyword=open box", badge: "Giá tốt" }
     ]
   },
   {

@@ -1,4 +1,4 @@
-import {
+﻿import {
   type FocusEvent as ReactFocusEvent,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -82,6 +82,7 @@ export function ShopProHeader() {
   const showStaffNav = isStaffUser(user);
   const showOwnerExecutiveNav = isOwnerUser(user);
   const showCustomerLinks = isCustomerUser(user);
+  const isClearanceRoute = location.pathname === "/products" && (new URLSearchParams(location.search).get("clearanceOnly") ?? "") === "1";
 
   const megaGroupsResolved = useMemo(
     () => applyCategoryHintsToMegaMenu(MEGA_MENU_GROUPS, categories),
@@ -496,7 +497,7 @@ export function ShopProHeader() {
                 <NavLink
                   to="/products"
                   className={({ isActive }) =>
-                    `${isActive ? "sp-nav-link is-active" : "sp-nav-link"} sp-nav-products`
+                    `${isActive && !isClearanceRoute ? "sp-nav-link is-active" : "sp-nav-link"} sp-nav-products`
                   }
                   onMouseEnter={() => {
                     if (isWideViewport) openMega();
@@ -515,6 +516,18 @@ export function ShopProHeader() {
                   Blog
                 </span>
               </NavLink>
+
+              <Link
+                to="/products?clearanceOnly=1"
+                className={isClearanceRoute ? "sp-nav-link sp-nav-link--clearance is-active" : "sp-nav-link sp-nav-link--clearance"}
+                onMouseEnter={closeMegaOnly}
+              >
+                <span className="sp-nav-inner">
+                  <IconSpark className="sp-header-icon" aria-hidden />
+                  Thanh lý
+                  <span className="sp-nav-badge">Hot</span>
+                </span>
+              </Link>
 
               <NavLink to="/contact" className={navClassName} onMouseEnter={closeMegaOnly}>
                 <span className="sp-nav-inner">Liên hệ</span>
@@ -696,3 +709,4 @@ export function ShopProHeader() {
     </header>
   );
 }
+

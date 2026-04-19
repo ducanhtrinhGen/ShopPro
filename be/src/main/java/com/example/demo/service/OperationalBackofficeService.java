@@ -243,6 +243,7 @@ public class OperationalBackofficeService {
                 brandName,
                 product.getPrice(),
                 product.getDiscountPrice(),
+                product.isClearance(),
                 product.getQuantity(),
                 product.getShortDescription(),
                 product.getDescription(),

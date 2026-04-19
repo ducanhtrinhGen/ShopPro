@@ -100,6 +100,7 @@ export type Product = {
   name: string;
   price: number;
   discountPrice: number | null;
+  clearance: boolean;
   imageUrl: string | null;
   thumbnailUrl: string | null;
   slug: string | null;
@@ -117,6 +118,7 @@ export type ProductDetail = {
   slug: string | null;
   price: number;
   discountPrice: number | null;
+  clearance: boolean;
   quantity: number;
   status: string | null;
   imageUrl: string | null;
@@ -277,6 +279,7 @@ export type AdminProductOpsItem = {
   brandName: string | null;
   price: number;
   discountPrice: number | null;
+  clearance: boolean;
   quantity: number;
   shortDescription: string | null;
   description: string | null;
@@ -306,6 +309,7 @@ export type AdminProductUpsertPayload = {
   brandId: number;
   price: number;
   discountPrice?: number | null;
+  clearance?: boolean;
   quantity: number;
   shortDescription?: string | null;
   description?: string | null;

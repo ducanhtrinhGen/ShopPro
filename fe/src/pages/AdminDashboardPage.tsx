@@ -71,6 +71,7 @@ type ProductFormState = {
   brandId: string;
   price: string;
   discountPrice: string;
+  clearance: boolean;
   quantity: string;
   shortDescription: string;
   description: string;
@@ -87,6 +88,7 @@ const DEFAULT_PRODUCT_FORM: ProductFormState = {
   brandId: "",
   price: "",
   discountPrice: "",
+  clearance: false,
   quantity: "0",
   shortDescription: "",
   description: "",
@@ -261,6 +263,7 @@ function productToForm(product: AdminProductOpsItem): ProductFormState {
     brandId: product.brandId ? String(product.brandId) : "",
     price: String(product.price),
     discountPrice: product.discountPrice ? String(product.discountPrice) : "",
+    clearance: product.clearance,
     quantity: String(product.quantity),
     shortDescription: product.shortDescription ?? "",
     description: product.description ?? "",
@@ -680,7 +683,7 @@ export function AdminDashboardPage() {
   const handleOrderStatusUpdate = async (orderId: number) => {
     const targetStatus = (orderDraftStatus[orderId] ?? "").trim().toUpperCase();
     if (!targetStatus) {
-      setOrderMessage("Vui long chon trang thai hop ly truoc khi cap nhat.");
+      setOrderMessage("Vui lòng chọn trạng thái hợp lý trước khi cập nhật.");
       return;
     }
 
@@ -692,9 +695,9 @@ export function AdminDashboardPage() {
       setOrders((previous) =>
         previous.map((item) => (item.id === orderId ? { ...item, orderStatus: updatedOrder.orderStatus } : item))
       );
-      setOrderMessage(`Da cap nhat trang thai don #${orderId} thanh ${toStatusLabel(targetStatus)}.`);
+      setOrderMessage(`Đã cập nhật trạng thái đơn #${orderId} thành ${toStatusLabel(targetStatus)}.`);
     } catch (error) {
-      setOrderMessage(toErrorMessage(error, `Khong the cap nhat trang thai don #${orderId}.`));
+      setOrderMessage(toErrorMessage(error, `Không thể cập nhật trạng thái đơn #${orderId}.`));
     } finally {
       setUpdatingOrderId(null);
     }
@@ -709,7 +712,7 @@ export function AdminDashboardPage() {
     const password = newPassword.trim();
 
     if (!username || !password) {
-      setUserMessage("Vui long nhap du tai khoan va mat khau.");
+      setUserMessage("Vui lòng nhập đủ tài khoản và mật khẩu.");
       return;
     }
 
@@ -722,9 +725,9 @@ export function AdminDashboardPage() {
       setNewUsername("");
       setNewPassword("");
       setNewRole("staff");
-      setUserMessage(`Da tao tai khoan ${created.username} (${toRoleLabel(created.role)}).`);
+      setUserMessage(`Đã tạo tài khoản ${created.username} (${toRoleLabel(created.role)}).`);
     } catch (error) {
-      setUserMessage(toErrorMessage(error, "Khong the tao tai khoan moi."));
+      setUserMessage(toErrorMessage(error, "Không thể tạo tài khoản mới."));
     } finally {
       setCreatingUser(false);
     }
@@ -739,9 +742,9 @@ export function AdminDashboardPage() {
     try {
       const updated = await updateAdminUserRole(target.id, role);
       setUsers((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-      setUserMessage(`Da doi vai tro cua ${updated.username} thanh ${toRoleLabel(updated.role)}.`);
+      setUserMessage(`Đã đổi vai trò của ${updated.username} thành ${toRoleLabel(updated.role)}.`);
     } catch (error) {
-      setUserMessage(toErrorMessage(error, `Khong the doi vai tro cho ${target.username}.`));
+      setUserMessage(toErrorMessage(error, `Không thể đổi vai trò cho ${target.username}.`));
     }
   };
 
@@ -755,10 +758,10 @@ export function AdminDashboardPage() {
       const updated = await updateAdminUserLockState(target.id, !target.locked);
       setUsers((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
       setUserMessage(
-        updated.locked ? `Da khoa tai khoan ${updated.username}.` : `Da mo khoa tai khoan ${updated.username}.`
+        updated.locked ? `Đã khóa tài khoản ${updated.username}.` : `Đã mở khóa tài khoản ${updated.username}.`
       );
     } catch (error) {
-      setUserMessage(toErrorMessage(error, `Khong the cap nhat trang thai khoa cho ${target.username}.`));
+      setUserMessage(toErrorMessage(error, `Không thể cập nhật trạng thái khóa cho ${target.username}.`));
     }
   };
 
@@ -767,7 +770,7 @@ export function AdminDashboardPage() {
       return;
     }
 
-    if (!window.confirm(`Ban chac chan muon xoa tai khoan ${target.username}?`)) {
+    if (!window.confirm(`Bạn chắc chắn muốn xóa tài khoản ${target.username}?`)) {
       return;
     }
 
@@ -775,9 +778,9 @@ export function AdminDashboardPage() {
     try {
       await deleteManagementUser(target.id);
       setUsers((previous) => previous.filter((item) => item.id !== target.id));
-      setUserMessage(`Da xoa tai khoan ${target.username}.`);
+      setUserMessage(`Đã xóa tài khoản ${target.username}.`);
     } catch (error) {
-      setUserMessage(toErrorMessage(error, `Khong the xoa tai khoan ${target.username}.`));
+      setUserMessage(toErrorMessage(error, `Không thể xóa tài khoản ${target.username}.`));
     }
   };
 
@@ -814,27 +817,27 @@ export function AdminDashboardPage() {
     const discountPrice = form.discountPrice.trim() ? Number(form.discountPrice) : null;
 
     if (!name) {
-      setProductMessage("Vui long nhap ten san pham.");
+      setProductMessage("Vui lòng nhập tên sản phẩm.");
       return null;
     }
     if (!Number.isInteger(categoryId) || categoryId <= 0) {
-      setProductMessage("Vui long chon danh muc hop ly.");
+      setProductMessage("Vui lòng chọn danh mục hợp lý.");
       return null;
     }
     if (!Number.isInteger(brandId) || brandId <= 0) {
-      setProductMessage("Vui long chon thuong hieu hop ly.");
+      setProductMessage("Vui lòng chọn thương hiệu hợp lý.");
       return null;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      setProductMessage("Gia niem yet phai lon hon 0.");
+      setProductMessage("Giá niêm yết phải lớn hơn 0.");
       return null;
     }
     if (!Number.isInteger(quantity) || quantity < 0) {
-      setProductMessage("Ton kho phai >= 0.");
+      setProductMessage("Tồn kho phải >= 0.");
       return null;
     }
     if (discountPrice !== null && (!Number.isFinite(discountPrice) || discountPrice <= 0 || discountPrice >= price)) {
-      setProductMessage("Gia giam phai > 0 va nho hon gia niem yet.");
+      setProductMessage("Giá giảm phải > 0 và nhỏ hơn giá niêm yết.");
       return null;
     }
 
@@ -845,6 +848,7 @@ export function AdminDashboardPage() {
       brandId,
       price,
       discountPrice,
+      clearance: form.clearance,
       quantity,
       shortDescription: form.shortDescription.trim() || null,
       description: form.description.trim() || null,
@@ -869,18 +873,18 @@ export function AdminDashboardPage() {
         const created = await createAdminProduct(payload);
         setProducts((previous) => [created, ...previous]);
         setStats((previous) => ({ ...previous, productTotal: previous.productTotal + 1 }));
-        setProductMessage(`Da tao san pham ${created.name}.`);
+        setProductMessage(`Đã tạo sản phẩm ${created.name}.`);
         setEditingProductId(created.id);
         setProductForm(productToForm(created));
       } else {
         const updated = await updateAdminProduct(editingProductId, payload);
         setProducts((previous) => previous.map((item) => (item.id === updated.id ? updated : item)));
-        setProductMessage(`Da cap nhat san pham ${updated.name}.`);
+        setProductMessage(`Đã cập nhật sản phẩm ${updated.name}.`);
         setEditingProductId(updated.id);
         setProductForm(productToForm(updated));
       }
     } catch (error) {
-      setProductMessage(toErrorMessage(error, "Khong the luu san pham."));
+      setProductMessage(toErrorMessage(error, "Không thể lưu sản phẩm."));
     } finally {
       setSavingProduct(false);
     }
@@ -902,7 +906,7 @@ export function AdminDashboardPage() {
   };
 
   const handleDeleteProduct = async (product: AdminProductOpsItem) => {
-    if (!window.confirm(`Ban chac chan muon xoa san pham ${product.name}?`)) {
+    if (!window.confirm(`Bạn chắc chắn muốn xóa sản phẩm ${product.name}?`)) {
       return;
     }
 
@@ -918,7 +922,7 @@ export function AdminDashboardPage() {
           ...previous,
           productTotal: previous.productTotal > 0 ? previous.productTotal - 1 : 0
         }));
-        setProductMessage(result.message || `Da xoa san pham ${product.name}.`);
+        setProductMessage(result.message || `Đã xóa sản phẩm ${product.name}.`);
         if (editingProductId === product.id) {
           resetProductForm();
         }
@@ -933,16 +937,16 @@ export function AdminDashboardPage() {
         };
         const nextProduct = result.product ?? fallbackProduct;
         setProducts((previous) => previous.map((item) => (item.id === product.id ? nextProduct : item)));
-        setProductMessage(result.message || `San pham ${product.name} da chuyen sang ngung ban.`);
+        setProductMessage(result.message || `Sản phẩm ${product.name} đã chuyển sang ngừng bán.`);
         if (editingProductId === product.id) {
           setProductForm(productToForm(nextProduct));
         }
         return;
       }
 
-      setProductMessage(`Khong the xoa san pham ${product.name}.`);
+      setProductMessage(`Không thể xóa sản phẩm ${product.name}.`);
     } catch (error) {
-      setProductMessage(toErrorMessage(error, `Khong the xoa san pham ${product.name}.`));
+      setProductMessage(toErrorMessage(error, `Không thể xóa sản phẩm ${product.name}.`));
     } finally {
       setDeletingProductId(null);
     }
@@ -950,7 +954,7 @@ export function AdminDashboardPage() {
 
   const handleUploadProductImage = async () => {
     if (!selectedUploadFile) {
-      setProductMessage("Vui long chon file anh truoc khi upload.");
+      setProductMessage("Vui lòng chọn file ảnh trước khi tải lên.");
       return;
     }
 
@@ -973,13 +977,13 @@ export function AdminDashboardPage() {
         image: uploaded.secureUrl,
         thumbnail: uploaded.secureUrl
       }));
-      setProductMessage("Da upload anh len Cloudinary.");
+      setProductMessage("Đã tải ảnh lên Cloudinary.");
       setSelectedUploadFile(null);
       if (uploadInputRef.current) {
         uploadInputRef.current.value = "";
       }
     } catch (error) {
-      setProductMessage(toErrorMessage(error, "Khong the upload anh."));
+      setProductMessage(toErrorMessage(error, "Không thể tải ảnh lên."));
     } finally {
       setUploadingProductImage(false);
     }
@@ -987,12 +991,12 @@ export function AdminDashboardPage() {
 
   const handleUploadProductSubImages = async () => {
     if (editingProductId === null) {
-      setProductMessage("Hay luu san pham truoc khi upload anh phu.");
+      setProductMessage("Hãy lưu sản phẩm trước khi tải ảnh phụ lên.");
       return;
     }
 
     if (!selectedSubUploadFiles.length) {
-      setProductMessage("Vui long chon it nhat mot anh phu.");
+      setProductMessage("Vui lòng chọn ít nhất một ảnh phụ.");
       return;
     }
 
@@ -1010,13 +1014,13 @@ export function AdminDashboardPage() {
     try {
       const created = await uploadAdminProductSubImages(editingProductId, selectedSubUploadFiles);
       setProductSubImages((previous) => [...previous, ...created]);
-      setProductMessage(`Da them ${created.length} anh phu.`);
+      setProductMessage(`Đã thêm ${created.length} ảnh phụ.`);
       setSelectedSubUploadFiles([]);
       if (subUploadInputRef.current) {
         subUploadInputRef.current.value = "";
       }
     } catch (error) {
-      setProductMessage(toErrorMessage(error, "Khong the upload anh phu."));
+      setProductMessage(toErrorMessage(error, "Không thể tải ảnh phụ lên."));
     } finally {
       setUploadingProductSubImages(false);
     }
@@ -1027,7 +1031,7 @@ export function AdminDashboardPage() {
       return;
     }
 
-    if (!window.confirm("Ban chac chan muon xoa anh phu nay?")) {
+    if (!window.confirm("Bạn chắc chắn muốn xóa ảnh phụ này?")) {
       return;
     }
 
@@ -1037,9 +1041,9 @@ export function AdminDashboardPage() {
     try {
       await deleteAdminProductSubImage(editingProductId, imageId);
       setProductSubImages((previous) => previous.filter((item) => item.id !== imageId));
-      setProductMessage("Da xoa anh phu.");
+      setProductMessage("Đã xóa ảnh phụ.");
     } catch (error) {
-      setProductMessage(toErrorMessage(error, "Khong the xoa anh phu."));
+      setProductMessage(toErrorMessage(error, "Không thể xóa ảnh phụ."));
     } finally {
       setDeletingSubImageId(null);
     }
@@ -1050,7 +1054,7 @@ export function AdminDashboardPage() {
       <>
         <section className="owner-crm-kpi-grid">
           <article>
-            <span>Tong mat hang</span>
+            <span>Tổng mặt hàng</span>
             <strong>{stats.productTotal}</strong>
           </article>
           <article>
@@ -1062,26 +1066,26 @@ export function AdminDashboardPage() {
             <strong>{orders.length}</strong>
           </article>
           <article>
-            <span>Don can xu ly</span>
+            <span>Đơn cần xử lý</span>
             <strong>{pendingOrders}</strong>
           </article>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Nhiem vu quan tri</h2>
+            <h2>Nhiệm vụ quản trị</h2>
             <div className="owner-crm-toolbar">
               <Link to="/products">Quản lý sản phẩm</Link>
-              <Link to="/staff">Sang bang dieu khien Staff</Link>
+              <Link to="/staff">Sang bảng điều khiển Staff</Link>
             </div>
           </div>
 
           <div className="owner-crm-admin-dual">
             <article className="owner-crm-admin-block">
-              <h3>Pham vi Admin hang ngay</h3>
+              <h3>Phạm vi Admin hàng ngày</h3>
               <ul>
                 <li>CRUD sản phẩm, danh mục, thương hiệu.</li>
-                <li>Xem và cập nhật trang thai don hang.</li>
+                <li>Xem và cập nhật trạng thái đơn hàng.</li>
                 <li>Kiểm tra tồn kho thấp và lỗi dữ liệu vận hành.</li>
                 <li>Quản lý nội dung website theo quy trình.</li>
               </ul>
@@ -1152,17 +1156,17 @@ export function AdminDashboardPage() {
           </article>
           <article>
             <span>Danh mục đang chọn</span>
-            <strong>{selectedCategory ? selectedCategory.name : "Tat ca"}</strong>
+            <strong>{selectedCategory ? selectedCategory.name : "Tất cả"}</strong>
           </article>
           <article>
-            <span>Tong mat hang</span>
+            <span>Tổng mặt hàng</span>
             <strong>{stats.productTotal}</strong>
           </article>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>danh muc hien co ({filteredCategories.length})</h2>
+            <h2>Danh mục hiện có ({filteredCategories.length})</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={() => setSelectedCategoryId(null)}>
                 Hiển thị tất cả danh mục
@@ -1207,22 +1211,22 @@ export function AdminDashboardPage() {
               </table>
             </div>
           ) : (
-            <p className="owner-crm-empty">Khong tim thay danh muc phu hop voi tu khoa hien tai.</p>
+            <p className="owner-crm-empty">Không tìm thấy danh mục phù hợp với từ khóa hiện tại.</p>
           )}
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Chi tiet danh muc</h2>
+            <h2>Chi tiết danh mục</h2>
           </div>
 
           {selectedCategory ? (
             <div className="owner-crm-category-detail">
               <p>
-                <strong>Ma danh muc:</strong> DM{String(selectedCategory.id).padStart(3, "0")}
+                <strong>Mã danh mục:</strong> DM{String(selectedCategory.id).padStart(3, "0")}
               </p>
               <p>
-                <strong>Ten danh muc:</strong> {selectedCategory.name}
+                <strong>Tên danh mục:</strong> {selectedCategory.name}
               </p>
               <div className="owner-crm-category-links">
                 <Link to={`/products?categoryId=${selectedCategory.id}`}>Mở trang sản phẩm theo danh mục</Link>
@@ -1281,12 +1285,12 @@ export function AdminDashboardPage() {
           <div className="owner-crm-product-layout">
             <div className="owner-crm-product-form">
               <label>
-                <span>Ten san pham *</span>
+                <span>Tên sản phẩm *</span>
                 <input
                   type="text"
                   value={productForm.name}
                   onChange={(event) => handleProductFieldChange("name", event.target.value)}
-                  placeholder="Vi du: RTX 5070 12GB"
+                  placeholder="Ví dụ: RTX 5070 12GB"
                 />
               </label>
               <label>
@@ -1295,17 +1299,17 @@ export function AdminDashboardPage() {
                   type="text"
                   value={productForm.slug}
                   onChange={(event) => handleProductFieldChange("slug", event.target.value)}
-                  placeholder="tu dong sinh neu bo trong"
+                  placeholder="Tự động sinh nếu để trống"
                 />
               </label>
 
               <label>
-                <span>DDanh mục *</span>
+                <span>Danh mục *</span>
                 <select
                   value={productForm.categoryId}
                   onChange={(event) => handleProductFieldChange("categoryId", event.target.value)}
                 >
-                  <option value="">Chọn danh mụục</option>
+                  <option value="">Chọn danh mục</option>
                   {stats.categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -1314,7 +1318,7 @@ export function AdminDashboardPage() {
                 </select>
               </label>
               <label>
-                <span>thương hiệu *</span>
+                <span>Thương hiệu *</span>
                 <select value={productForm.brandId} onChange={(event) => handleProductFieldChange("brandId", event.target.value)}>
                   <option value="">Chọn thương hiệu</option>
                   {brands.map((brand) => (
@@ -1336,18 +1340,27 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label>
-                <span>giá giảm</span>
+                <span>Giá giảm</span>
                 <input
                   type="number"
                   min={0}
                   value={productForm.discountPrice}
                   onChange={(event) => handleProductFieldChange("discountPrice", event.target.value)}
-                  placeholder="Bo trong neu khong giam"
+                  placeholder="Để trống nếu không giảm"
+                />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <span>Hàng thanh lý</span>
+                <input
+                  type="checkbox"
+                  checked={productForm.clearance}
+                  onChange={(event) => handleProductFieldChange("clearance", event.target.checked)}
+                  style={{ width: "auto" }}
                 />
               </label>
 
               <label>
-                <span>Ton kho *</span>
+                <span>Tồn kho *</span>
                 <input
                   type="number"
                   min={0}
@@ -1356,7 +1369,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label>
-                <span>trạng thái</span>
+                <span>Trạng thái</span>
                 <select
                   value={productForm.status}
                   onChange={(event) => handleProductFieldChange("status", event.target.value as ProductStatusFilter)}
@@ -1389,7 +1402,7 @@ export function AdminDashboardPage() {
               </label>
 
               <label className="is-wide">
-                <span>Tai anh len Cloudinary</span>
+                <span>Tải ảnh lên Cloudinary</span>
                 <div className="owner-crm-product-upload-row">
                   <input
                     ref={uploadInputRef}
@@ -1398,7 +1411,7 @@ export function AdminDashboardPage() {
                     onChange={(event) => setSelectedUploadFile(event.target.files?.[0] ?? null)}
                   />
                   <button type="button" disabled={uploadingProductImage} onClick={() => void handleUploadProductImage()}>
-                    {uploadingProductImage ? "Dang upload..." : "Upload anh"}
+                    {uploadingProductImage ? "Đang tải lên..." : "Tải ảnh"}
                   </button>
                 </div>
               </label>
@@ -1407,12 +1420,12 @@ export function AdminDashboardPage() {
                 <div className="owner-crm-product-subimages-head">
                   <div>
                     <strong>Anh phu (gallery)</strong>
-                    <p>Upload nhieu anh de hien thi tren trang chi tiet san pham. Anh chinh o tren van giu nguyen.</p>
+                    <p>Tải nhiều ảnh để hiển thị trên trang chi tiết sản phẩm. Ảnh chính ở trên vẫn giữ nguyên.</p>
                   </div>
-                  {editingProductId === null ? <span className="owner-crm-chip">Hay luu san pham truoc</span> : null}
+                  {editingProductId === null ? <span className="owner-crm-chip">Hãy lưu sản phẩm trước</span> : null}
                 </div>
 
-                {isLoadingProductSubImages ? <p className="owner-crm-empty">Dang tai danh sach anh phu...</p> : null}
+                {isLoadingProductSubImages ? <p className="owner-crm-empty">Đang tải danh sách ảnh phụ...</p> : null}
 
                 {!isLoadingProductSubImages && editingProductId !== null && productSubImages.length ? (
                   <div className="owner-crm-product-subimages-grid">
@@ -1427,7 +1440,7 @@ export function AdminDashboardPage() {
                             disabled={deletingSubImageId === item.id}
                             onClick={() => void handleDeleteProductSubImage(item.id)}
                           >
-                            {deletingSubImageId === item.id ? "Dang xoa..." : "Xoa"}
+                            {deletingSubImageId === item.id ? "Đang xóa..." : "Xoa"}
                           </button>
                         </div>
                       );
@@ -1436,11 +1449,11 @@ export function AdminDashboardPage() {
                 ) : null}
 
                 {!isLoadingProductSubImages && editingProductId !== null && !productSubImages.length ? (
-                  <p className="owner-crm-empty">Chua co anh phu.</p>
+                  <p className="owner-crm-empty">Chưa có ảnh phụ.</p>
                 ) : null}
 
                 <label className="is-wide">
-                  <span>Tai nhieu anh phu</span>
+                  <span>Tải nhiều ảnh phụ</span>
                   <div className="owner-crm-product-upload-row">
                     <input
                       ref={subUploadInputRef}
@@ -1455,7 +1468,7 @@ export function AdminDashboardPage() {
                       disabled={editingProductId === null || uploadingProductSubImages}
                       onClick={() => void handleUploadProductSubImages()}
                     >
-                      {uploadingProductSubImages ? "Dang upload..." : "Upload anh phu"}
+                      {uploadingProductSubImages ? "Đang tải lên..." : "Tải ảnh phụ"}
                     </button>
                   </div>
                 </label>
@@ -1493,14 +1506,14 @@ export function AdminDashboardPage() {
                 {productPreviewSrc ? (
                   <img src={productPreviewSrc} alt="preview" />
                 ) : (
-                  <div className="owner-crm-product-preview-empty">Chua co anh</div>
+                  <div className="owner-crm-product-preview-empty">Chưa có ảnh</div>
                 )}
-                <strong>{editingProduct ? `Dang sua #${editingProduct.id}` : "Tao moi san pham"}</strong>
+                <strong>{editingProduct ? `Đang sửa #${editingProduct.id}` : "Tạo mới sản phẩm"}</strong>
               </div>
 
               <div className="owner-crm-inline-actions">
                 <button type="button" className="role-admin-button" disabled={savingProduct} onClick={() => void handleSaveProduct()}>
-                  {savingProduct ? "Dang luu..." : editingProductId === null ? "Them san pham" : "Cap nhat san pham"}
+                  {savingProduct ? "Đang lưu..." : editingProductId === null ? "Thêm sản phẩm" : "Cập nhật sản phẩm"}
                 </button>
                 {editingProductId !== null ? (
                   <button type="button" className="role-admin-button role-admin-button-danger" onClick={resetProductForm}>
@@ -1514,13 +1527,13 @@ export function AdminDashboardPage() {
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Danh sach san pham ({filteredProducts.length})</h2>
+            <h2>Danh sách sản phẩm ({filteredProducts.length})</h2>
             <div className="owner-crm-toolbar">
               <select
                 value={productCategoryFilter === null ? "ALL" : String(productCategoryFilter)}
                 onChange={(event) => setProductCategoryFilter(event.target.value === "ALL" ? null : Number(event.target.value))}
               >
-                <option value="ALL">Tat ca danh mục</option>
+                <option value="ALL">Tất cả danh mục</option>
                 {stats.categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -1532,8 +1545,8 @@ export function AdminDashboardPage() {
                 value={productStatusFilter}
                 onChange={(event) => setProductStatusFilter(event.target.value as ProductStatusFilter)}
               >
-                <option value="ALL">Tat ca trạng thái</option>
-                <option value="ACTIVE">Dang ban</option>
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="ACTIVE">Đang bán</option>
                 <option value="INACTIVE">Ngung ban</option>
               </select>
 
@@ -1545,15 +1558,15 @@ export function AdminDashboardPage() {
                   setProductStatusFilter("ALL");
                 }}
               >
-                Dat lai bo loc
+                Đặt lại bộ lọc
               </button>
             </div>
           </div>
 
-          {isLoadingProducts ? <p className="owner-crm-empty">Dang tai danh sach san pham...</p> : null}
+          {isLoadingProducts ? <p className="owner-crm-empty">Đang tải danh sách sản phẩm...</p> : null}
 
           {!isLoadingProducts && !filteredProducts.length ? (
-            <p className="owner-crm-empty">Khong co san pham phu hop bo loc hien tai.</p>
+            <p className="owner-crm-empty">Không có sản phẩm phù hợp bộ lọc hiện tại.</p>
           ) : null}
 
           {!isLoadingProducts && filteredProducts.length ? (
@@ -1562,14 +1575,14 @@ export function AdminDashboardPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Anh</th>
-                    <th>sản phẩm</th>
-                    <th>danh mục</th>
-                    <th>thương hiệu</th>
-                    <th>giá / giảm</th>
-                    <th>Ton kho</th>
-                    <th>trạng thái</th>
-                    <th>Thao tac</th>
+                    <th>Ảnh</th>
+                    <th>Sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>Thương hiệu</th>
+                    <th>Giá / giảm</th>
+                    <th>Tồn kho</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1582,12 +1595,13 @@ export function AdminDashboardPage() {
                           {productImageSrc ? (
                             <img className="owner-crm-product-thumb" src={productImageSrc} alt={product.name} />
                           ) : (
-                            <div className="owner-crm-product-thumb owner-crm-product-thumb-empty">No image</div>
+                            <div className="owner-crm-product-thumb owner-crm-product-thumb-empty">Chưa có ảnh</div>
                           )}
                         </td>
                         <td>
                           <strong>{product.name}</strong>
                           <p className="owner-crm-product-slug">/{product.slug}</p>
+                          {product.clearance ? <p className="owner-crm-product-slug">Hàng thanh lý</p> : null}
                         </td>
                         <td>{product.categoryName || "-"}</td>
                         <td>{product.brandName || "-"}</td>
@@ -1597,7 +1611,7 @@ export function AdminDashboardPage() {
                             {product.discountPrice !== null ? (
                               <span>{moneyFormatter.format(product.discountPrice)}</span>
                             ) : (
-                              <span>Khong giam</span>
+                              <span>Không giảm</span>
                             )}
                           </div>
                         </td>
@@ -1622,7 +1636,7 @@ export function AdminDashboardPage() {
                               disabled={deletingProductId === product.id}
                               onClick={() => void handleDeleteProduct(product)}
                             >
-                              {deletingProductId === product.id ? "Dang xoa..." : "Xoa"}
+                              {deletingProductId === product.id ? "Đang xóa..." : "Xoa"}
                             </button>
                           </div>
                         </td>
@@ -1647,11 +1661,11 @@ export function AdminDashboardPage() {
             <strong>{orders.length}</strong>
           </article>
           <article>
-            <span>Don dang loc</span>
+            <span>Đơn đang lọc</span>
             <strong>{filteredOrders.length}</strong>
           </article>
           <article>
-            <span>Don cho xu ly</span>
+            <span>Đơn chờ xử lý</span>
             <strong>{pendingOrders}</strong>
           </article>
           <article>
@@ -1666,17 +1680,17 @@ export function AdminDashboardPage() {
             <div className="owner-crm-toolbar">
               <input
                 type="text"
-                placeholder="Tim theo ma don / khach hang..."
+                placeholder="Tìm theo mã đơn / khách hàng..."
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
               />
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as OrderStatusFilter)}>
-                <option value="ALL">Tat ca trạng thái</option>
-                <option value="PENDING">Cho xu ly</option>
-                <option value="PROCESSING">Dang xu ly</option>
-                <option value="SHIPPING">Dang giao</option>
-                <option value="COMPLETED">Hoan tat</option>
-                <option value="CANCELLED">Da huy</option>
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ xử lý</option>
+                <option value="PROCESSING">Đang xử lý</option>
+                <option value="SHIPPING">Đang giao</option>
+                <option value="COMPLETED">Hoàn tất</option>
+                <option value="CANCELLED">Đã hủy</option>
               </select>
               <button
                 type="button"
@@ -1685,17 +1699,17 @@ export function AdminDashboardPage() {
                   setStatusFilter("ALL");
                 }}
               >
-                Dat lai
+                Đặt lại
               </button>
             </div>
           </div>
 
           {orderMessage ? <p className="owner-crm-empty">{orderMessage}</p> : null}
           {orderError ? <p className="owner-crm-empty">{orderError}</p> : null}
-          {isLoadingOrders ? <p className="owner-crm-empty">Dang tai danh sach don hang...</p> : null}
+          {isLoadingOrders ? <p className="owner-crm-empty">Đang tải danh sách đơn hàng...</p> : null}
 
           {!isLoadingOrders && !orderError && !filteredOrders.length ? (
-            <p className="owner-crm-empty">Khong co don hang phu hop voi dieu kien loc hien tai.</p>
+            <p className="owner-crm-empty">Không có đơn hàng phù hợp với điều kiện lọc hiện tại.</p>
           ) : null}
 
           {!isLoadingOrders && !orderError && filteredOrders.length ? (
@@ -1703,15 +1717,15 @@ export function AdminDashboardPage() {
               <table className="owner-crm-table">
                 <thead>
                   <tr>
-                    <th>Ma don</th>
-                    <th>Khach hang</th>
-                    <th>Nguoi nhan</th>
-                    <th>Th?</th>
-                    <th>Thanh toan</th>
-                    <th>trạng thái</th>
-                    <th>Tong tien</th>
-                    <th>Thoi gian</th>
-                    <th>Cap nhat</th>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Người nhận</th>
+                    <th>Nhãn</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Tổng tiền</th>
+                    <th>Thời gian</th>
+                    <th>Cập nhật</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1724,11 +1738,11 @@ export function AdminDashboardPage() {
                         <td>
                           <strong>{order.customerUsername}</strong>
                         </td>
-                        <td>{order.receiverName || "Chua cap nhat"}</td>
+                        <td>{order.receiverName || "Chưa cập nhật"}</td>
                         <td>
                           <span className="owner-crm-chip">{toOrderTag(index)}</span>
                         </td>
-                        <td>{order.paymentMethod || "Khong ro"}</td>
+                        <td>{order.paymentMethod || "Không rõ"}</td>
                         <td>
                           <span className={`owner-crm-status ${toStatusClass(order.orderStatus)}`}>
                             {toStatusLabel(order.orderStatus)}
@@ -1781,9 +1795,9 @@ export function AdminDashboardPage() {
       return (
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Quan ly nguoi dung</h2>
+            <h2>Quản lý người dùng</h2>
           </div>
-          <p className="owner-crm-empty">Tai khoan Admin khong co quyen tao, xoa, doi vai tro hoac khoa/mo tai khoan.</p>
+          <p className="owner-crm-empty">Tài khoản Admin không có quyền tạo, xóa, đổi vai trò hoặc khóa/mở tài khoản.</p>
         </section>
       );
     }
@@ -1796,28 +1810,28 @@ export function AdminDashboardPage() {
             <strong>{users.length}</strong>
           </article>
           <article>
-            <span>So Admin</span>
+            <span>Số Admin</span>
             <strong>{adminCount}</strong>
           </article>
           <article>
-            <span>So Staff</span>
+            <span>Số Staff</span>
             <strong>{staffCount}</strong>
           </article>
           <article>
-            <span>Dang khoa</span>
+            <span>Đang khóa</span>
             <strong>{lockedUserCount}</strong>
           </article>
         </section>
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Tao tai khoan van hanh</h2>
+            <h2>Tạo tài khoản vận hành</h2>
             <div className="owner-crm-toolbar">
               <button type="button" onClick={() => setNewRole("staff")}>
-                Chon Staff
+                Chọn Staff
               </button>
               <button type="button" onClick={() => setNewRole("admin")}>
-                Chon Admin
+                Chọn Admin
               </button>
             </div>
           </div>
@@ -1830,7 +1844,7 @@ export function AdminDashboardPage() {
               type="text"
               value={newUsername}
               onChange={(event) => setNewUsername(event.target.value)}
-              placeholder="Ten dang nhap"
+              placeholder="Tên đăng nhập"
             />
             <input
               type="password"
@@ -1853,7 +1867,7 @@ export function AdminDashboardPage() {
 
         <section className="owner-crm-panel">
           <div className="owner-crm-panel-head">
-            <h2>Danh sach tai khoan ({ownerManagedUsers.length})</h2>
+            <h2>Danh sách tài khoản ({ownerManagedUsers.length})</h2>
           </div>
 
           {isLoadingUsers ? <p className="owner-crm-empty">Đang tải danh sách tài khoản...</p> : null}
@@ -1868,10 +1882,10 @@ export function AdminDashboardPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>tài khoản</th>
-                    <th>Vai tro</th>
-                    <th>trạng thái</th>
-                    <th>Thao tac</th>
+                    <th>Tài khoản</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1993,10 +2007,10 @@ export function AdminDashboardPage() {
               <p>
                 {activeView === "overview"
                   ? (isOwner
-                      ? "Admin dashboard phục vụ catalog/vận hành. Báo cáo cấp cao & quản trị tài khoản quản trị nằm ở trang Owner."
+                      ? "Admin dashboard phục vụ danh mục và vận hành. Báo cáo cấp cao và quản trị tài khoản nằm ở trang Owner."
                       : "Theo dõi KPI, đơn hàng, tồn kho và dữ liệu vận hành trong cùng bảng điều khiển.")
                   : activeView === "categories"
-                    ? "Trang danh mục dùng cùng bớc với Owner để theo dõi và thao tác."
+                    ? "Trang danh mục dùng cùng bộ với Owner để theo dõi và thao tác."
                     : activeView === "products"
                       ? "Admin CRUD sản phẩm ngay tại đây: cập nhật ảnh, tồn kho và giảm giá theo nhu cầu."
                     : activeView === "orders"

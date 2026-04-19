@@ -25,12 +25,12 @@ export function RegisterPage() {
 
     const normalizedUsername = username.trim();
     if (!normalizedUsername || !password.trim()) {
-      setError("Ten dang nhap va mat khau khong duoc de trong.");
+      setError("Tên đăng nhập và mật khẩu không được để trống.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Mat khau nhap lai khong khop.");
+      setError("Mật khẩu nhập lại không khớp.");
       return;
     }
 
@@ -48,7 +48,7 @@ export function RegisterPage() {
       if (requestError instanceof ApiRequestError) {
         setError(requestError.message);
       } else {
-        setError("Khong the dang ky tai khoan. Vui long thu lai.");
+        setError("Không thể đăng ký tài khoản. Vui lòng thử lại.");
       }
     } finally {
       setIsSubmitting(false);
@@ -58,17 +58,19 @@ export function RegisterPage() {
   return (
     <div className="auth-layout">
       <section className="auth-card">
-        <p className="auth-kicker">Thanh vien ShopPro</p>
-        <h1>Tao tai khoan moi</h1>
-        <p className="auth-description">Dang ky nhanh de mua hang, theo doi don va quan ly gio hang cua ban.</p>
+        <p className="auth-kicker">Thành viên ShopPro</p>
+        <h1>Tạo tài khoản mới</h1>
+        <p className="auth-description">
+          Đăng ký nhanh để mua hàng, theo dõi đơn và quản lý giỏ hàng của bạn.
+        </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
-            Ten dang nhap
+            Tên đăng nhập
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="nhap username"
+              placeholder="Nhập tên đăng nhập"
               autoComplete="username"
               maxLength={100}
               required
@@ -76,12 +78,12 @@ export function RegisterPage() {
           </label>
 
           <label>
-            Mat khau
+            Mật khẩu
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="nhap mat khau"
+              placeholder="Nhập mật khẩu"
               autoComplete="new-password"
               maxLength={100}
               required
@@ -89,12 +91,12 @@ export function RegisterPage() {
           </label>
 
           <label>
-            Nhap lai mat khau
+            Nhập lại mật khẩu
             <input
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="nhap lai mat khau"
+              placeholder="Nhập lại mật khẩu"
               autoComplete="new-password"
               maxLength={100}
               required
@@ -104,13 +106,13 @@ export function RegisterPage() {
           {error ? <p className="form-error">{error}</p> : null}
 
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Dang tao tai khoan..." : "Dang ky"}
+            {isSubmitting ? "Đang tạo tài khoản..." : "Đăng ký"}
           </button>
         </form>
 
         <div className="demo-credentials">
           <p>
-            Da co tai khoan? <Link to="/login">Dang nhap ngay</Link>
+            Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link>
           </p>
         </div>
       </section>

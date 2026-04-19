@@ -81,7 +81,7 @@ export function BlogPostPage() {
         <h1>{post.title}</h1>
         <p style={{ opacity: 0.8 }}>{dateFormatter.format(new Date(post.createdAt))}</p>
         <div className="page-header-actions">
-          <Link to="/products">Mở catalog</Link>
+          <Link to="/products">Xem cửa hàng</Link>
           <Link to="/contact">Liên hệ</Link>
         </div>
       </header>

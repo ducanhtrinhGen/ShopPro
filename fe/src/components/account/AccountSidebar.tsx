@@ -17,7 +17,7 @@ const NAV_ITEMS: Array<{ id: AccountSectionId; label: string }> = [
   { id: "edit-profile", label: "Chỉnh sửa hồ sơ" },
   { id: "change-password", label: "Đổi mật khẩu" },
   { id: "all-orders", label: "Tất cả đơn hàng" },
-  { id: "wishlist", label: "Wishlist" }
+  { id: "wishlist", label: "Yêu thích" }
 ];
 
 type AccountSidebarProps = {

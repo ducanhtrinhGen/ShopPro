@@ -29,13 +29,13 @@ function normalizeStatus(status: string | null | undefined) {
 
 function toStatusLabel(status: string | null | undefined) {
   const normalized = normalizeStatus(status);
-  if (normalized === "PENDING") return "Cho xu ly";
-  if (normalized === "PROCESSING") return "Dang xu ly";
-  if (normalized === "SHIPPING") return "Dang giao";
-  if (normalized === "COMPLETED" || normalized === "DELIVERED") return "Hoan tat";
-  if (normalized === "CANCELLED") return "Da huy";
-  if (normalized === "CONFIRMED") return "Da xac nhan";
-  return status || "Khong ro";
+  if (normalized === "PENDING") return "Chờ xử lý";
+  if (normalized === "PROCESSING") return "Đang xử lý";
+  if (normalized === "SHIPPING") return "Đang giao";
+  if (normalized === "COMPLETED" || normalized === "DELIVERED") return "Hoàn tất";
+  if (normalized === "CANCELLED") return "Đã hủy";
+  if (normalized === "CONFIRMED") return "Đã xác nhận";
+  return status || "Không rõ";
 }
 
 function toErrorMessage(error: unknown, fallback: string) {
@@ -151,18 +151,18 @@ export function StaffDashboardPage() {
             <strong>ShopPro Staff</strong>
           </div>
           <p className="owner-crm-empty" style={{ padding: "0 1rem", textAlign: "left" }}>
-            Khu vuc danh cho nhan vien: xu ly don hang, theo doi ton kho va canh bao du lieu.
+            Khu vực dành cho nhân viên: xử lý đơn hàng, theo dõi tồn kho và cảnh báo dữ liệu.
           </p>
           <div className="owner-crm-sidebar-actions">
-            <Link to="/products">Xem san pham (khach)</Link>
+            <Link to="/products">Xem sản phẩm (khách)</Link>
           </div>
         </aside>
 
         <div className="owner-crm-main">
           <header className="owner-crm-header">
             <div>
-              <p className="owner-crm-kicker">VAN HANH</p>
-              <h1>Bang dieu khien nhan vien</h1>
+              <p className="owner-crm-kicker">VẬN HÀNH</p>
+              <h1>Bảng điều khiển nhân viên</h1>
               <p>
               API <code>/api/staff/**</code>: đơn hàng, tồn kho thấp, cảnh báo dữ liệu, chỉnh số lượng tồn. Không chỉnh
               giá/danh mục.
@@ -175,7 +175,7 @@ export function StaffDashboardPage() {
           {isLoading ? (
             <div className="loading-block">
               <div className="loading-ring" />
-              <p>Dang tai...</p>
+              <p>Đang tải...</p>
             </div>
           ) : null}
 
@@ -183,21 +183,21 @@ export function StaffDashboardPage() {
             <>
               <section className="owner-crm-panel">
                 <div className="owner-crm-panel-head">
-                  <h2>Don hang ({filteredOrders.length})</h2>
+                  <h2>Đơn hàng ({filteredOrders.length})</h2>
                   <div className="owner-crm-toolbar">
                     <input
                       type="text"
-                      placeholder="Tim ma don / khach..."
+                      placeholder="Tìm mã đơn / khách..."
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                     />
                     <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as OrderStatusFilter)}>
-                      <option value="ALL">Tat ca</option>
-                      <option value="PENDING">Cho xu ly</option>
-                      <option value="PROCESSING">Dang xu ly</option>
-                      <option value="SHIPPING">Dang giao</option>
-                      <option value="COMPLETED">Hoan tat</option>
-                      <option value="CANCELLED">Da huy</option>
+                      <option value="ALL">Tất cả</option>
+                      <option value="PENDING">Chờ xử lý</option>
+                      <option value="PROCESSING">Đang xử lý</option>
+                      <option value="SHIPPING">Đang giao</option>
+                      <option value="COMPLETED">Hoàn tất</option>
+                      <option value="CANCELLED">Đã hủy</option>
                     </select>
                   </div>
                 </div>
@@ -207,12 +207,12 @@ export function StaffDashboardPage() {
                     <table className="owner-crm-table">
                       <thead>
                         <tr>
-                          <th>Ma</th>
-                          <th>Khach</th>
-                          <th>Trang thai</th>
-                          <th>Tong</th>
-                          <th>Thoi gian</th>
-                          <th>Cap nhat</th>
+                          <th>Mã</th>
+                          <th>Khách</th>
+                          <th>Trạng thái</th>
+                          <th>Tổng</th>
+                          <th>Thời gian</th>
+                          <th>Cập nhật</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -253,7 +253,7 @@ export function StaffDashboardPage() {
                                     disabled={updatingOrderId === order.id}
                                     onClick={() => void handleStatusUpdate(order.id)}
                                   >
-                                    {updatingOrderId === order.id ? "..." : "Luu"}
+                                    {updatingOrderId === order.id ? "..." : "Lưu"}
                                   </button>
                                 </div>
                               </td>
@@ -310,7 +310,7 @@ export function StaffDashboardPage() {
 
               <section className="owner-crm-panel">
                 <div className="owner-crm-panel-head">
-                  <h2>Canh bao du lieu</h2>
+                  <h2>Cảnh báo dữ liệu</h2>
                 </div>
                 {dataIssues.length ? (
                   <ul>
@@ -321,7 +321,7 @@ export function StaffDashboardPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="owner-crm-empty">Khong phat hien loi nghiem trong.</p>
+                  <p className="owner-crm-empty">Không phát hiện lỗi nghiêm trọng.</p>
                 )}
               </section>
             </>

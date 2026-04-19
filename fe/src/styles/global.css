@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Lexend:wght@500;600;700;800&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Lexend:wght@500;600;700;800&display=swap");
 
 :root {
   --bg: #050709;
@@ -2860,6 +2860,22 @@ a.account-sidebar-link-external:hover {
   background: rgba(232, 200, 92, 0.08);
 }
 
+.sp-nav-link--clearance {
+  color: #ffd6b5;
+  border-color: rgba(255, 122, 26, 0.18);
+}
+
+.sp-nav-link--clearance:hover,
+.sp-nav-link--clearance.is-active {
+  border-color: rgba(255, 122, 26, 0.4);
+  background: rgba(255, 122, 26, 0.09);
+  color: #fff0e6;
+}
+
+.sp-nav-link--clearance.is-active::after {
+  background: linear-gradient(90deg, transparent 0%, #ff9a47 50%, transparent 100%);
+}
+
 .sp-nav-inner {
   display: inline-flex;
   align-items: center;
@@ -3063,7 +3079,7 @@ a.account-sidebar-link-external:hover {
 
 @media (min-width: 1024px) {
   .sp-mega-columns {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 11px 12px;
   }
 }
@@ -3581,6 +3597,12 @@ a.account-sidebar-link-external:hover {
   outline-offset: 2px;
 }
 
+.sp-mobile-quick-link--clearance {
+  border-color: rgba(255, 122, 26, 0.42);
+  color: #ffe3c9;
+  background: rgba(255, 122, 26, 0.08);
+}
+
 .sp-mobile-featured {
   padding: 16px 18px 18px;
   border-bottom: 1px solid rgba(38, 52, 70, 0.55);
@@ -3588,6 +3610,11 @@ a.account-sidebar-link-external:hover {
 
 .sp-mobile-featured .sp-mega-featured-card--compact {
   width: 100%;
+}
+
+.sp-mobile-quick-link--clearance:hover {
+  border-color: rgba(255, 153, 71, 0.56);
+  background: rgba(255, 122, 26, 0.13);
 }
 
 .sp-mobile-accordions {
@@ -4678,6 +4705,20 @@ a.account-sidebar-link-external:hover {
   font-weight: 800;
   color: #151100;
   background: #f5de1a;
+}
+
+.c-home-clearance-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff7f0;
+  background: linear-gradient(135deg, #ff7a1a, #ff4d2d);
+  box-shadow: 0 10px 18px rgba(255, 90, 31, 0.22);
 }
 
 .c-home-product-meta h3 {
@@ -6334,6 +6375,34 @@ a.account-sidebar-link-external:hover {
   font-family: "Lexend", "Be Vietnam Pro", sans-serif;
 }
 
+.c-product-clearance-head {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.c-product-clearance-head p {
+  margin: 0;
+  color: #8d9db2;
+  max-width: 52rem;
+}
+
+.c-product-clearance-pill {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.2), rgba(255, 77, 45, 0.24));
+  border: 1px solid rgba(255, 122, 26, 0.4);
+  color: #ffd8b5;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .c-product-detail-price-old {
   text-decoration: line-through;
   color: var(--muted);
@@ -7094,3 +7163,4 @@ button.login-modal-link:hover {
 .shoppro-footer-login-button:hover {
   opacity: 0.9;
 }
+

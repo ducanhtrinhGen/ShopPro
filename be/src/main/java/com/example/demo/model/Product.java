@@ -48,6 +48,9 @@ public class Product {
     @Column(name = "discount_price")
     private Long discountPrice;
 
+    @Column(nullable = false, columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0")
+    private boolean clearance = false;
+
     @Column(nullable = false)
     private int quantity = 0;
 

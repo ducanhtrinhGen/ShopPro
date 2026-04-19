@@ -43,7 +43,7 @@ export function CustomerDashboardPage() {
       <header className="role-hero role-hero-customer">
         <p className="role-kicker">KHÔNG GIAN KHÁCH HÀNG</p>
         <h1>Trang khách hàng</h1>
-        <p>Bắt đầu từ bảng điều khiển khách hàng, sau đó đi vào khu catalog để tìm linh kiện phù hợp.</p>
+        <p>Bắt đầu từ bảng điều khiển khách hàng, sau đó vào cửa hàng để tìm linh kiện phù hợp.</p>
         <div className="role-action-row">
           <Link to="/products" className="role-primary-link">
             Mua sản phẩm

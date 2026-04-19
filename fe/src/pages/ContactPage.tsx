@@ -63,7 +63,7 @@ export function ContactPage() {
         <h1>Liên hệ ShopPro</h1>
         <p>Gửi yêu cầu tư vấn build PC, báo lỗi đơn hàng, hoặc góp ý sản phẩm.</p>
         <div className="page-header-actions">
-          <Link to="/products">Mở catalog</Link>
+          <Link to="/products">Xem cửa hàng</Link>
           <Link to="/blog">Blog</Link>
         </div>
       </header>

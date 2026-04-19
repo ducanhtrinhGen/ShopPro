@@ -23,12 +23,14 @@ public class ProductService {
             Integer categoryId,
             Integer brandId,
             Boolean promoOnly,
+            Boolean clearanceOnly,
             Boolean inStockOnly,
             String sort,
             int page,
             int pageSize) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), pageSize, buildSort(sort));
-        Specification<Product> specification = buildSpecification(keyword, categoryId, brandId, promoOnly, inStockOnly);
+        Specification<Product> specification = buildSpecification(keyword, categoryId, brandId, promoOnly, clearanceOnly,
+                inStockOnly);
         return productRepository.findAll(specification, pageable);
     }
 
@@ -80,6 +82,7 @@ public class ProductService {
             Integer categoryId,
             Integer brandId,
             Boolean promoOnly,
+            Boolean clearanceOnly,
             Boolean inStockOnly) {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
@@ -104,6 +107,11 @@ public class ProductService {
                         cb.isNotNull(root.get("discountPrice")),
                         cb.greaterThan(root.get("discountPrice"), 0L),
                         cb.lessThan(root.get("discountPrice"), root.get("price")));
+            }
+
+            boolean clearance = clearanceOnly != null && clearanceOnly;
+            if (clearance) {
+                predicate = cb.and(predicate, cb.isTrue(root.get("clearance")));
             }
 
             boolean inStock = inStockOnly != null && inStockOnly;

@@ -14,6 +14,7 @@ type ProductQuery = {
   categoryId: string;
   brandId: string;
   promoOnly: boolean;
+  clearanceOnly: boolean;
   inStockOnly: boolean;
   sort: ProductSort;
   page: number;
@@ -80,6 +81,7 @@ function parseQuery(params: URLSearchParams): ProductQuery {
     categoryId: params.get("categoryId") ?? "",
     brandId: params.get("brandId") ?? "",
     promoOnly: (params.get("promoOnly") ?? "") === "1",
+    clearanceOnly: (params.get("clearanceOnly") ?? "") === "1",
     inStockOnly: (params.get("inStockOnly") ?? "") === "1",
     sort: parseSort(params.get("sort")),
     page,
@@ -104,6 +106,10 @@ function toSearchParams(query: ProductQuery): URLSearchParams {
 
   if (query.promoOnly) {
     params.set("promoOnly", "1");
+  }
+
+  if (query.clearanceOnly) {
+    params.set("clearanceOnly", "1");
   }
 
   if (query.inStockOnly) {
@@ -634,6 +640,13 @@ export function ProductsPage() {
             </button>
             <button
               type="button"
+              className={!query.clearanceOnly ? "chip" : "chip active"}
+              onClick={() => updateQuery({ clearanceOnly: !query.clearanceOnly, page: 0 })}
+            >
+              Hàng thanh lý
+            </button>
+            <button
+              type="button"
               className={!query.inStockOnly ? "chip" : "chip active"}
               onClick={() => updateQuery({ inStockOnly: !query.inStockOnly, page: 0 })}
             >
@@ -644,7 +657,16 @@ export function ProductsPage() {
             type="button"
             className="chip"
             onClick={() =>
-              updateQuery({ keyword: "", categoryId: "", brandId: "", promoOnly: false, inStockOnly: false, sort: "default", page: 0 })
+              updateQuery({
+                keyword: "",
+                categoryId: "",
+                brandId: "",
+                promoOnly: false,
+                clearanceOnly: false,
+                inStockOnly: false,
+                sort: "default",
+                page: 0
+              })
             }
           >
             Xóa bộ lọc
@@ -695,6 +717,7 @@ export function ProductsPage() {
                     <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
                       {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
                       {!out && percent ? <span className="c-home-promo-badge">-{percent}%</span> : null}
+                      {product.clearance ? <span className="c-home-clearance-badge">Hàng thanh lý</span> : null}
                       <img src={imageOf(product, heroVisuals[product.id % heroVisuals.length])} alt={product.name} />
                     </Link>
 
@@ -703,7 +726,9 @@ export function ProductsPage() {
                         <Link to={href}>{product.name}</Link>
                       </h3>
                       <p>
-                        {(product.brandName ? `${product.brandName} • ` : "") + (product.categoryName ?? "Chưa phân loại")}
+                        {(product.brandName ? `${product.brandName} • ` : "") +
+                          (product.categoryName ?? "Chưa phân loại")}
+                        {product.clearance ? " • Hàng thanh lý" : ""}
                       </p>
 
                       {salePrice ? (

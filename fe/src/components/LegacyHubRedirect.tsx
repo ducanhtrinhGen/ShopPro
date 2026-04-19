@@ -10,7 +10,7 @@ export function LegacyHubRedirect() {
     return (
       <div className="centered-screen">
         <div className="loading-ring" />
-        <p>Dang kiem tra phien...</p>
+        <p>Đang kiểm tra phiên...</p>
       </div>
     );
   }

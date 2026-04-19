@@ -49,7 +49,7 @@ export function AppShell() {
     const accountLinks: FooterColumn["links"] =
       isLoggedIn && showCustomerLinks
         ? [
-            { label: "Wishlist", href: "/wishlist" },
+            { label: "Yêu thích", href: "/wishlist" },
             { label: "Đơn hàng của tôi", href: "/orders" },
             { label: "Thông tin khách hàng", href: "/profile" }
           ]

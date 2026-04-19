@@ -51,7 +51,7 @@ export function BlogListPage() {
         <h1>Blog ShopPro</h1>
         <p>Hướng dẫn chọn linh kiện, mẹo build PC, và tin khuyến mãi.</p>
         <div className="page-header-actions">
-          <Link to="/products">Mở catalog</Link>
+          <Link to="/products">Xem cửa hàng</Link>
           <Link to="/contact">Liên hệ</Link>
         </div>
       </header>

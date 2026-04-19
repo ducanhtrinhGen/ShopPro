@@ -202,7 +202,7 @@ export function OwnerExecutivePage() {
                 Trung tâm điều hành chủ shop
               </h1>
               <p>
-                Owner tập trung báo cáo cấp cao và kiểm soát tài khoản quản trị. Admin/Staff xử lý vận hành & catalog ở khu vực riêng.
+                Owner tập trung báo cáo cấp cao và kiểm soát tài khoản quản trị. Admin/Staff xử lý vận hành và danh mục ở khu vực riêng.
               </p>
             </div>
 

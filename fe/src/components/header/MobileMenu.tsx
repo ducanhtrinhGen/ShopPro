@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import type { FeaturedMenuCard, MegaMenuGroup } from "../../config/megaMenu";
@@ -45,6 +45,9 @@ export function MobileMenu({ isOpen, onClose, groups, featured, utilityLinks }: 
         </div>
 
         <nav className="sp-mobile-quick" aria-label="Liên kết nhanh">
+          <Link to="/products?clearanceOnly=1" className="sp-mobile-quick-link sp-mobile-quick-link--clearance" onClick={onClose}>
+            Hàng thanh lý
+          </Link>
           {utilityLinks.map((l) => (
             <Link key={`${l.label}-${l.to}`} to={l.to} className="sp-mobile-quick-link" onClick={onClose}>
               {l.label}
@@ -79,3 +82,4 @@ export function MobileMenu({ isOpen, onClose, groups, featured, utilityLinks }: 
 
   return createPortal(drawer, document.body);
 }
+

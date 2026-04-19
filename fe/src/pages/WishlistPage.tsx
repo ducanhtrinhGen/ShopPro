@@ -43,7 +43,7 @@ export function WishlistPage() {
       } catch (e) {
         if (!active) return;
         setItems([]);
-        setError(toErrorMessage(e, "Không tải được wishlist."));
+        setError(toErrorMessage(e, "Không tải được danh sách yêu thích."));
       } finally {
         if (active) setIsLoading(false);
       }
@@ -67,9 +67,9 @@ export function WishlistPage() {
     try {
       await removeWishlist(productId);
       setItems((prev) => prev.filter((p) => p.productId !== productId));
-      setMessage("Đã gỡ khỏi wishlist.");
+      setMessage("Đã gỡ khỏi danh sách yêu thích.");
     } catch (e) {
-      setMessage(toErrorMessage(e, "Không gỡ được wishlist."));
+      setMessage(toErrorMessage(e, "Không gỡ được khỏi danh sách yêu thích."));
     } finally {
       setRemovingId(null);
     }
@@ -78,10 +78,10 @@ export function WishlistPage() {
   return (
     <section className="panel">
       <header className="page-header">
-        <h1>Wishlist</h1>
+        <h1>Yêu thích</h1>
         <p>Lưu sản phẩm để xem lại nhanh.</p>
         <div className="page-header-actions">
-          <Link to="/products">Mở catalog</Link>
+          <Link to="/products">Xem cửa hàng</Link>
           <Link to="/orders">Đơn hàng</Link>
           <Link to="/profile">Thông tin khách hàng</Link>
         </div>
@@ -94,7 +94,7 @@ export function WishlistPage() {
         <input
           type="text"
           value={keyword}
-          placeholder="Tìm trong wishlist..."
+          placeholder="Tìm trong danh sách yêu thích..."
           onChange={(e) => setKeyword(e.target.value)}
         />
       </div>
@@ -102,11 +102,13 @@ export function WishlistPage() {
       {isLoading ? (
         <div className="loading-block">
           <div className="loading-ring" />
-          <p>Đang tải wishlist...</p>
+          <p>Đang tải danh sách yêu thích...</p>
         </div>
       ) : null}
 
-      {!isLoading && !error && filtered.length === 0 ? <p className="empty-message">Wishlist đang trống.</p> : null}
+      {!isLoading && !error && filtered.length === 0 ? (
+        <p className="empty-message">Danh sách yêu thích đang trống.</p>
+      ) : null}
 
       {!isLoading && !error && filtered.length ? (
         <div className="c-home-grid" style={{ marginTop: "1rem" }}>

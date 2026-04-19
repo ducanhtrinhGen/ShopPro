@@ -558,6 +558,9 @@ public class AdminOperationsApiController {
         product.setBrand(brand);
         product.setPrice(request.price());
         product.setDiscountPrice(request.discountPrice());
+        if (request.clearance() != null) {
+            product.setClearance(request.clearance());
+        }
         product.setQuantity(request.quantity());
         product.setShortDescription(trimToNull(request.shortDescription()));
         product.setDescription(trimToNull(request.description()));
@@ -623,6 +626,7 @@ public class AdminOperationsApiController {
                 brandName,
                 product.getPrice(),
                 product.getDiscountPrice(),
+                product.isClearance(),
                 product.getQuantity(),
                 product.getShortDescription(),
                 product.getDescription(),

@@ -8,6 +8,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { OrderPage } from "./pages/OrderPage";
 import { OwnerExecutivePage } from "./pages/OwnerExecutivePage";
+import { HomePage } from "./pages/HomePage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -30,7 +31,7 @@ export function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route element={<AppShell />}>
-        <Route path="/" element={<ProductsPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:slug" element={<ProductDetailPage />} />
         <Route path="/blog" element={<BlogListPage />} />

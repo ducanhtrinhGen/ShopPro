@@ -39,6 +39,8 @@ fe/dist/
 fe/tsconfig.tsbuildinfo
 fe/tsconfig.node.tsbuildinfo
 fe/*.tsbuildinfo
+fe/vite.config.js
+fe/vite.config.d.ts
 fe/.vite/
 fe/.vercel/
 fe/npm-debug.log*

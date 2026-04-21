@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -588,6 +589,15 @@ class ApiFlowTests {
                                 {"username":"%s","password":"Other2pass"}
                                 """.formatted(buyer)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void googleAuthorizationEndpointShouldRedirectBackToLoginWhenGoogleIsNotConfigured() throws Exception {
+        mockMvc.perform(get("/api/auth/oauth2/authorization/google")
+                        .param("redirect", "/orders"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("oauthError=google_not_configured")))
+                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("from=/orders")));
     }
 
     private static String extractTokenFromResetLink(String link) {

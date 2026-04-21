@@ -8,6 +8,7 @@ import { RegisterModalProvider } from "./auth/RegisterModalContext";
 import { LoginModal } from "./components/LoginModal";
 import { RegisterModal } from "./components/RegisterModal";
 import "./styles/global.css";
+import "./styles/tailwind.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

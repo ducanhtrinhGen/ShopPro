@@ -14,7 +14,13 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     @Query("SELECT a FROM Account a WHERE a.loginName = :loginName")
     Optional<Account> findByLoginName(@Param("loginName") String loginName);
 
+    boolean existsByLoginNameIgnoreCase(String loginName);
+
     Optional<Account> findByEmail(String email);
 
     Optional<Account> findByEmailIgnoreCase(String email);
+
+    Optional<Account> findByGoogleSubject(String googleSubject);
+
+    Optional<Account> findByProviderAndProviderId(String provider, String providerId);
 }

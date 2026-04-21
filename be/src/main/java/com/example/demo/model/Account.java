@@ -27,6 +27,18 @@ public class Account {
     @Column(unique = true, length = 255)
     private String email;
 
+    @Column(length = 32)
+    private String provider;
+
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
+    @Column(length = 500)
+    private String avatar;
+
+    @Column(name = "google_subject", unique = true, length = 255)
+    private String googleSubject;
+
     @Column(nullable = false)
     private String password;
 

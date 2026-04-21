@@ -1,7 +1,8 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { readGoogleAuthErrorMessage, readRequestedRedirectPath, startGoogleAuth } from "../auth/googleAuth";
 import { getDefaultRouteForUser } from "../auth/roleUtils";
 
 export function LoginPage() {
@@ -20,14 +21,16 @@ export function LoginPage() {
 
   const redirectPath = (() => {
     const fromState = (location.state as { from?: string } | null)?.from;
-    if (fromState) return fromState;
+    if (fromState && fromState.startsWith("/")) {
+      return fromState;
+    }
 
-    const params = new URLSearchParams(location.search);
-    const fromQuery = params.get("from");
-    if (fromQuery && fromQuery.startsWith("/")) return fromQuery;
-
-    return undefined;
+    return readRequestedRedirectPath(location.search);
   })();
+
+  useEffect(() => {
+    setError(readGoogleAuthErrorMessage(location.search));
+  }, [location.search]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,6 +57,25 @@ export function LoginPage() {
         <p className="auth-kicker">Cửa hàng ShopPro</p>
         <h1>Chào mừng bạn quay lại ShopPro</h1>
         <p className="auth-description">Đăng nhập để vào đúng khu vực quản trị, vận hành hoặc mua sắm.</p>
+
+        <div className="auth-social-stack">
+          <button
+            type="button"
+            className="auth-google-button"
+            onClick={() => startGoogleAuth()}
+            disabled={isSubmitting}
+          >
+            <span className="auth-google-button-mark" aria-hidden="true">
+              G
+            </span>
+            Tiếp tục với Google
+          </button>
+          <p className="auth-hint">Nếu email đã tồn tại ở ShopPro, hệ thống sẽ tự liên kết vào đúng tài khoản của bạn.</p>
+        </div>
+
+        <div className="auth-divider" aria-hidden="true">
+          <span>hoặc dùng tài khoản ShopPro</span>
+        </div>
 
         <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
           <label>

@@ -68,30 +68,13 @@ function HomePromoTile({ product, bgUrl, title, subtitle, cta }: PromoTileProps)
 }
 
 export function HomeMarketingSections({ products, topCategories }: HomeMarketingSectionsProps) {
-  const heroProduct = products[0];
   const promoProducts = products.slice(1, 5);
   const guideProducts = products.slice(5, 8);
 
   return (
     <>
-      <section
-        className="c-home-hero js-reveal c-home-full-bleed"
-        style={{
-          backgroundImage: `linear-gradient(115deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.25)), url(${imageOf(heroProduct, heroVisuals[0])})`
-        }}
-      >
-        <div className="c-home-hero-content">
-          <p className="c-home-eyebrow">HIỆU NĂNG THẾ HỆ MỚI</p>
-          <h1>{heroProduct?.name ?? "Linh kiện PC cao cấp"}</h1>
-          <p>
-            Nâng tầm trải nghiệm chơi game, làm việc và sáng tạo với hệ sinh thái linh kiện hiệu năng cao, thiết kế gọn
-            gàng và khả năng nâng cấp linh hoạt.
-          </p>
-          <Link to="#home-featured" className="c-home-cta">
-            Mua ngay
-          </Link>
-        </div>
-      </section>
+      {/* Legacy `c-home-hero` (image background) was replaced by the full-screen
+          video <Hero /> rendered above this section in `HomePage.tsx`. */}
 
       <section className="c-home-two-up c-home-full-bleed">
         <HomePromoTile

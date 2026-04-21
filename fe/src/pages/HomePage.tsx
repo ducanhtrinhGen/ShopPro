@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest, ApiRequestError } from "../api/client";
 import { getCategories } from "../api/catalog";
+import { Hero } from "../components/hero/Hero";
 import { HomeMarketingSections } from "../components/home/HomeMarketingSections";
 import { fallbackCategoryNames } from "../components/home/homeConstants";
 import { HOME_FEATURED_PRODUCT_QUERY, toSearchParams } from "../productListing/productQuery";
@@ -105,10 +106,15 @@ export function HomePage() {
     };
   }, [featuredProducts.length, topCategories.length]);
 
+  const heroTitle = featuredProducts[0]?.name ?? "Linh kiện PC cao cấp";
+
   return (
-    <section className="panel c-home">
-      {loadError ? <p className="form-error" style={{ marginBottom: "1rem" }}>{loadError}</p> : null}
-      <HomeMarketingSections products={featuredProducts} topCategories={topCategories} />
-    </section>
+    <>
+      <Hero title={heroTitle} />
+      <section className="panel c-home">
+        {loadError ? <p className="form-error" style={{ marginBottom: "1rem" }}>{loadError}</p> : null}
+        <HomeMarketingSections products={featuredProducts} topCategories={topCategories} />
+      </section>
+    </>
   );
 }

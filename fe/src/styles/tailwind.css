@@ -1,0 +1,63 @@
+/* Only components + utilities layers; preflight is disabled in tailwind.config.js */
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+ * Hero-section helpers. Kept here (not in global.css) so the hero is fully
+ * self-contained. Tailwind utility classes handle everything else.
+ * ------------------------------------------------------------------------- */
+
+/* Cinematic radial + linear gradient overlay: keeps foreground text readable
+ * over any video frame without looking opaque. */
+.hero-overlay {
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 55%, rgba(0, 0, 0, 0.9) 100%),
+    linear-gradient(180deg, rgba(5, 6, 10, 0.35) 0%, rgba(5, 6, 10, 0.75) 100%);
+}
+
+/* Chromatic-aberration glitch title. CSS-only, driven via data-text so screen
+ * readers announce the label only once (aria-label on the element). */
+.hero-glitch {
+  position: relative;
+  display: inline-block;
+  color: #fff;
+  text-shadow: 0 0 12px rgba(34, 229, 255, 0.35);
+}
+.hero-glitch::before,
+.hero-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.hero-glitch::before {
+  color: #22e5ff;
+  transform: translate(-2px, 0);
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  animation: hero-glitch-a 2.8s steps(6) infinite;
+}
+.hero-glitch::after {
+  color: #ff2bd6;
+  transform: translate(2px, 0);
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  animation: hero-glitch-b 3.4s steps(8) infinite;
+}
+@keyframes hero-glitch-a {
+  0%, 100% { transform: translate(-2px, 0); }
+  20%      { transform: translate(-4px, 1px); }
+  40%      { transform: translate(-1px, -1px); }
+  60%      { transform: translate(-3px, 2px); }
+  80%      { transform: translate(-2px, -2px); }
+}
+@keyframes hero-glitch-b {
+  0%, 100% { transform: translate(2px, 0); }
+  25%      { transform: translate(4px, -1px); }
+  50%      { transform: translate(1px, 1px); }
+  75%      { transform: translate(3px, -2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-glitch::before,
+  .hero-glitch::after { animation: none; }
+}

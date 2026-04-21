@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +35,7 @@ public class AccountService implements UserDetailsService {
     private static final String ROLE_STAFF = "ROLE_STAFF";
     private static final String ROLE_CUSTOMER = "ROLE_CUSTOMER";
     private static final String ROLE_USER = "ROLE_USER";
+    private static final String PROVIDER_GOOGLE = "GOOGLE";
 
     @Autowired
     private AccountRepository accountRepository;
@@ -121,6 +124,55 @@ public class AccountService implements UserDetailsService {
         account.setStatus("ACTIVE");
         account.setRoles(new HashSet<>(Set.of(userRole)));
 
+        return accountRepository.save(account);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Account saveOrUpdateOAuth2Account(
+            String email,
+            String fullName,
+            String avatarUrl,
+            String provider,
+            String providerId) {
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail.isEmpty()) {
+            throw new IllegalArgumentException("OAuth2 account does not provide a usable email.");
+        }
+
+        String normalizedProvider = normalizeProvider(provider);
+        String normalizedProviderId = normalizeProviderId(providerId);
+        String normalizedFullName = normalizeFullName(fullName);
+        String normalizedAvatarUrl = normalizeAvatarUrl(avatarUrl);
+
+        Account account = accountRepository.findByEmailIgnoreCase(normalizedEmail).orElse(null);
+        if (account == null) {
+            Role userRole = resolveDefaultCustomerRole();
+            account = new Account();
+            account.setLoginName(generateGoogleLoginName(normalizedEmail, normalizedFullName));
+            account.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            account.setLocked(false);
+            account.setStatus("ACTIVE");
+            account.setRoles(new HashSet<>(Set.of(userRole)));
+        }
+
+        applyOAuth2Profile(
+                account,
+                normalizedEmail,
+                normalizedFullName != null ? normalizedFullName : normalizedEmail,
+                normalizedAvatarUrl,
+                normalizedProvider,
+                normalizedProviderId);
+        return accountRepository.save(account);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Account createOrLinkGoogleCustomerAccount(String googleSubject, String email, String fullName) {
+        String normalizedSubject = normalizeGoogleSubject(googleSubject);
+        Account account = saveOrUpdateOAuth2Account(email, fullName, null, PROVIDER_GOOGLE, normalizedSubject);
+        account.setGoogleSubject(normalizedSubject);
+        if (account.getProvider() == null || account.getProvider().isBlank()) {
+            account.setProvider(PROVIDER_GOOGLE);
+        }
         return accountRepository.save(account);
     }
 
@@ -296,6 +348,123 @@ public class AccountService implements UserDetailsService {
         return account.getRoles().stream()
                 .map(Role::getName)
                 .anyMatch(roleName::equals);
+    }
+
+    private void applyOAuth2Profile(
+            Account account,
+            String email,
+            String fullName,
+            String avatarUrl,
+            String provider,
+            String providerId) {
+        account.setEmail(email);
+        account.setProvider(provider);
+        account.setProviderId(providerId);
+        account.setAvatar(avatarUrl);
+        if (PROVIDER_GOOGLE.equals(provider)) {
+            account.setGoogleSubject(providerId);
+        }
+        if (fullName != null && !fullName.isBlank()) {
+            account.setFullName(fullName);
+        } else if (account.getFullName() == null || account.getFullName().isBlank()) {
+            account.setFullName(account.getLoginName());
+        }
+    }
+
+    private Role resolveDefaultCustomerRole() {
+        return roleRepository.findByName(ROLE_CUSTOMER)
+                .or(() -> roleRepository.findByName(ROLE_USER))
+                .orElseThrow(() -> new IllegalStateException("Khong tim thay role mac dinh cho customer."));
+    }
+
+    private String generateGoogleLoginName(String normalizedEmail, String normalizedFullName) {
+        if (normalizedEmail.length() <= 100 && !accountRepository.existsByLoginNameIgnoreCase(normalizedEmail)) {
+            return normalizedEmail;
+        }
+
+        String base = normalizedFullName != null ? normalizedFullName : normalizedEmail;
+        String sanitized = sanitizeLoginBase(base);
+        if (sanitized.isBlank()) {
+            sanitized = "googleuser";
+        }
+
+        String candidate = trimToMaxLength(sanitized, 100);
+        if (!accountRepository.existsByLoginNameIgnoreCase(candidate)) {
+            return candidate;
+        }
+
+        for (int suffix = 2; suffix < 10_000; suffix++) {
+            String suffixValue = "-" + suffix;
+            String prefix = trimToMaxLength(sanitized, 100 - suffixValue.length());
+            candidate = prefix + suffixValue;
+            if (!accountRepository.existsByLoginNameIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+
+        throw new IllegalStateException("Khong the tao username duy nhat cho tai khoan Google.");
+    }
+
+    private String sanitizeLoginBase(String rawValue) {
+        String normalized = rawValue == null ? "" : Normalizer.normalize(rawValue, Normalizer.Form.NFD);
+        String withoutMarks = normalized.replaceAll("\\p{M}+", "");
+        String compact = withoutMarks
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9._-]+", "-")
+                .replaceAll("^[._-]+|[._-]+$", "")
+                .replaceAll("-{2,}", "-");
+        return compact;
+    }
+
+    private String trimToMaxLength(String value, int maxLength) {
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
+    }
+
+    private String normalizeGoogleSubject(String googleSubject) {
+        return normalizeProviderId(googleSubject);
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return "";
+        }
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeFullName(String fullName) {
+        String normalized = trimToNull(fullName);
+        return normalized == null ? null : normalized.strip();
+    }
+
+    private String normalizeAvatarUrl(String avatarUrl) {
+        return trimToNull(avatarUrl);
+    }
+
+    private String normalizeProvider(String provider) {
+        String normalized = provider == null ? "" : provider.trim().toUpperCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("OAuth2 provider is missing.");
+        }
+        return normalized;
+    }
+
+    private String normalizeProviderId(String providerId) {
+        String normalized = providerId == null ? "" : providerId.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("OAuth2 provider id is missing.");
+        }
+        return normalized;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
 }

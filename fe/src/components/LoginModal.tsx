@@ -1,9 +1,10 @@
 import { type FormEvent, type MouseEvent, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { ApiRequestError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { startGoogleAuth } from "../auth/googleAuth";
 import { useLoginModal } from "../auth/LoginModalContext";
 import { useRegisterModal } from "../auth/RegisterModalContext";
-import { ApiRequestError } from "../api/client";
 
 export function LoginModal() {
   const { isOpen, closeLoginModal, completeLoginSuccess } = useLoginModal();
@@ -59,15 +60,15 @@ export function LoginModal() {
     event.preventDefault();
     setError(null);
 
-    const u = username.trim();
-    if (!u || !password) {
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername || !password) {
       setError("Vui lòng nhập tên đăng nhập và mật khẩu.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await login(u, password);
+      await login(normalizedUsername, password);
       await completeLoginSuccess();
       setUsername("");
       setPassword("");
@@ -83,11 +84,7 @@ export function LoginModal() {
   };
 
   return (
-    <div
-      className="login-modal-backdrop"
-      role="presentation"
-      onMouseDown={handleBackdropMouseDown}
-    >
+    <div className="login-modal-backdrop" role="presentation" onMouseDown={handleBackdropMouseDown}>
       <div
         className="login-modal"
         role="dialog"
@@ -105,17 +102,31 @@ export function LoginModal() {
             </h2>
             <p className="login-modal-sub">Nhập tài khoản để tiếp tục thao tác.</p>
           </div>
-          <button
-            type="button"
-            className="login-modal-close"
-            onClick={closeLoginModal}
-            aria-label="Đóng"
-          >
+          <button type="button" className="login-modal-close" onClick={closeLoginModal} aria-label="Đóng">
             ×
           </button>
         </div>
 
-        <form className="login-modal-form" onSubmit={(e) => void handleSubmit(e)} autoComplete="off">
+        <div className="login-modal-form" style={{ paddingBottom: 0 }}>
+          <button
+            type="button"
+            className="login-modal-google"
+            onClick={() => startGoogleAuth()}
+            disabled={isSubmitting}
+          >
+            <span className="login-modal-google-mark" aria-hidden="true">
+              G
+            </span>
+            Tiếp tục với Google
+          </button>
+          <p className="login-modal-google-hint">Đăng nhập nhanh bằng email Google của bạn.</p>
+        </div>
+
+        <div className="login-modal-divider" aria-hidden="true">
+          <span>hoặc nhập tài khoản ShopPro</span>
+        </div>
+
+        <form className="login-modal-form" onSubmit={(event) => void handleSubmit(event)} autoComplete="off">
           <label className="login-modal-label">
             Tên đăng nhập
             <input

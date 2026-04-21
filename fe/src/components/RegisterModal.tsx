@@ -1,6 +1,7 @@
 import { type FormEvent, type MouseEvent, useEffect, useId, useRef, useState } from "react";
 import { ApiRequestError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { startGoogleAuth } from "../auth/googleAuth";
 import { useLoginModal } from "../auth/LoginModalContext";
 import { useRegisterModal } from "../auth/RegisterModalContext";
 import { validatePasswordRules } from "../utils/passwordRules";
@@ -55,9 +56,11 @@ export function RegisterModal() {
     if (!isOpen || !isSuccess) {
       return;
     }
+
     const id = window.setTimeout(() => {
       void completeRegisterSuccess();
     }, 1600);
+
     return () => window.clearTimeout(id);
   }, [isOpen, isSuccess, completeRegisterSuccess]);
 
@@ -75,8 +78,8 @@ export function RegisterModal() {
     event.preventDefault();
     setError(null);
 
-    const u = username.trim();
-    if (!u || !password) {
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername || !password) {
       setError("Vui lòng nhập tên đăng nhập và mật khẩu.");
       return;
     }
@@ -94,7 +97,7 @@ export function RegisterModal() {
 
     setIsSubmitting(true);
     try {
-      await register(u, password);
+      await register(normalizedUsername, password);
       setIsSuccess(true);
     } catch (requestError) {
       if (requestError instanceof ApiRequestError) {
@@ -108,11 +111,7 @@ export function RegisterModal() {
   };
 
   return (
-    <div
-      className="login-modal-backdrop"
-      role="presentation"
-      onMouseDown={handleBackdropMouseDown}
-    >
+    <div className="login-modal-backdrop" role="presentation" onMouseDown={handleBackdropMouseDown}>
       <div
         className="login-modal"
         role="dialog"
@@ -130,12 +129,7 @@ export function RegisterModal() {
             </h2>
             <p className="login-modal-sub">Tạo tài khoản để mua hàng và theo dõi đơn.</p>
           </div>
-          <button
-            type="button"
-            className="login-modal-close"
-            onClick={closeRegisterModal}
-            aria-label="Đóng"
-          >
+          <button type="button" className="login-modal-close" onClick={closeRegisterModal} aria-label="Đóng">
             ×
           </button>
         </div>
@@ -150,52 +144,73 @@ export function RegisterModal() {
             </p>
           </div>
         ) : (
-          <form className="login-modal-form" onSubmit={(e) => void handleSubmit(e)} autoComplete="off">
-            <label className="login-modal-label">
-              Tên đăng nhập
-              <input
-                ref={usernameRef}
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Nhập tên đăng nhập"
-                autoComplete="off"
-                maxLength={100}
-                required
-              />
-            </label>
+          <>
+            <div className="login-modal-form" style={{ paddingBottom: 0 }}>
+              <button
+                type="button"
+                className="login-modal-google"
+                onClick={() => startGoogleAuth()}
+                disabled={isSubmitting}
+              >
+                <span className="login-modal-google-mark" aria-hidden="true">
+                  G
+                </span>
+                Đăng ký nhanh với Google
+              </button>
+              <p className="login-modal-google-hint">Nếu email đã tồn tại, ShopPro sẽ tự nối vào tài khoản đó.</p>
+            </div>
 
-            <label className="login-modal-label">
-              Mật khẩu
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Tối thiểu 8 ký tự, có chữ và số"
-                autoComplete="off"
-                maxLength={100}
-                required
-              />
-            </label>
+            <div className="login-modal-divider" aria-hidden="true">
+              <span>hoặc tạo tài khoản ShopPro</span>
+            </div>
 
-            <label className="login-modal-label">
-              Nhập lại mật khẩu
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Nhập lại mật khẩu"
-                autoComplete="off"
-                maxLength={100}
-                required
-              />
-            </label>
+            <form className="login-modal-form" onSubmit={(event) => void handleSubmit(event)} autoComplete="off">
+              <label className="login-modal-label">
+                Tên đăng nhập
+                <input
+                  ref={usernameRef}
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="Nhập tên đăng nhập"
+                  autoComplete="off"
+                  maxLength={100}
+                  required
+                />
+              </label>
 
-            {error ? <p className="login-modal-error">{error}</p> : null}
+              <label className="login-modal-label">
+                Mật khẩu
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Tối thiểu 8 ký tự, có chữ và số"
+                  autoComplete="off"
+                  maxLength={100}
+                  required
+                />
+              </label>
 
-            <button type="submit" className="login-modal-submit" disabled={isSubmitting}>
-              {isSubmitting ? "Đang tạo tài khoản..." : "Đăng ký"}
-            </button>
-          </form>
+              <label className="login-modal-label">
+                Nhập lại mật khẩu
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Nhập lại mật khẩu"
+                  autoComplete="off"
+                  maxLength={100}
+                  required
+                />
+              </label>
+
+              {error ? <p className="login-modal-error">{error}</p> : null}
+
+              <button type="submit" className="login-modal-submit" disabled={isSubmitting}>
+                {isSubmitting ? "Đang tạo tài khoản..." : "Đăng ký"}
+              </button>
+            </form>
+          </>
         )}
 
         {!isSuccess ? (

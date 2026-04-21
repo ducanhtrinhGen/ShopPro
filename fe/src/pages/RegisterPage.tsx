@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { FormEvent, useEffect, useState } from "react";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
-import { validatePasswordRules } from "../utils/passwordRules";
 import { useAuth } from "../auth/AuthContext";
+import { readGoogleAuthErrorMessage, readRequestedRedirectPath, startGoogleAuth } from "../auth/googleAuth";
 import { getDefaultRouteForUser } from "../auth/roleUtils";
+import { validatePasswordRules } from "../utils/passwordRules";
 
 export function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -13,11 +14,18 @@ export function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { user, register } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
 
   if (user) {
     return <Navigate to={getDefaultRouteForUser(user)} replace />;
   }
+
+  const redirectPath = readRequestedRedirectPath(location.search);
+
+  useEffect(() => {
+    setError(readGoogleAuthErrorMessage(location.search));
+  }, [location.search]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,7 +51,7 @@ export function RegisterPage() {
     setIsSubmitting(true);
     try {
       const authUser = await register(normalizedUsername, password);
-      navigate(getDefaultRouteForUser(authUser), { replace: true });
+      navigate(redirectPath ?? getDefaultRouteForUser(authUser), { replace: true });
     } catch (requestError) {
       if (requestError instanceof ApiRequestError) {
         setError(requestError.message);
@@ -60,9 +68,26 @@ export function RegisterPage() {
       <section className="auth-card">
         <p className="auth-kicker">Thành viên ShopPro</p>
         <h1>Tạo tài khoản mới</h1>
-        <p className="auth-description">
-          Đăng ký nhanh để mua hàng, theo dõi đơn và quản lý giỏ hàng của bạn.
-        </p>
+        <p className="auth-description">Đăng ký nhanh để mua hàng, theo dõi đơn và quản lý giỏ hàng của bạn.</p>
+
+        <div className="auth-social-stack">
+          <button
+            type="button"
+            className="auth-google-button"
+            onClick={() => startGoogleAuth()}
+            disabled={isSubmitting}
+          >
+            <span className="auth-google-button-mark" aria-hidden="true">
+              G
+            </span>
+            Đăng ký nhanh với Google
+          </button>
+          <p className="auth-hint">Bạn có thể tạo tài khoản mới hoặc nối vào tài khoản ShopPro đã có cùng email.</p>
+        </div>
+
+        <div className="auth-divider" aria-hidden="true">
+          <span>hoặc tự tạo tài khoản ShopPro</span>
+        </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label>

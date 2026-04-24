@@ -22,6 +22,7 @@ import { BlogPostPage } from "./pages/BlogPostPage";
 import { ContactPage } from "./pages/ContactPage";
 import { WishlistPage } from "./pages/WishlistPage";
 import { OAuth2RedirectPage } from "./pages/OAuth2RedirectPage";
+import { BuildPCPage } from "./pages/BuildPCPage";
 
 export function App() {
   return (
@@ -39,6 +40,7 @@ export function App() {
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/build-pc" element={<BuildPCPage />} />
 
         <Route path="/owner-staff" element={<LegacyHubRedirect />} />
 

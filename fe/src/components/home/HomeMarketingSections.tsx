@@ -4,6 +4,7 @@ import { buildPlpCategoryHref } from "../../productListing/productQuery";
 import { imageOf } from "../../productListing/productPresentation";
 import type { Product } from "../../types";
 import { categoryVisuals, heroVisuals, serviceBenefits } from "./homeConstants";
+import { CategoryIcon } from "./CategoryIcon";
 
 export type HomeCategoryTile = {
   id: number;
@@ -93,11 +94,11 @@ export function HomeMarketingSections({ products, topCategories }: HomeMarketing
         />
       </section>
 
-      <section className="c-home-section js-reveal">
-        <h2 className="c-home-title">Mua theo danh mục</h2>
+      <section className="c-home-section c-home-shop-by-category js-reveal">
+        <h2 className="c-home-shop-by-category-title">SHOP BY CATEGORY</h2>
 
         <div className="c-home-category-grid">
-          {topCategories.map((category, index) => {
+          {topCategories.map((category) => {
             const isRealCategory = category.id > 0;
             const href = isRealCategory ? buildPlpCategoryHref(String(category.id)) : "/products";
 
@@ -106,12 +107,18 @@ export function HomeMarketingSections({ products, topCategories }: HomeMarketing
                 key={`${category.id}-${category.name}`}
                 to={href}
                 className="c-home-category-card js-reveal"
-                style={{
-                  backgroundImage: `linear-gradient(155deg, rgba(15, 21, 30, 0.84), rgba(6, 10, 16, 0.9)), url(${categoryVisuals[index % categoryVisuals.length]})`
-                }}
+                aria-label={category.name}
               >
-                <span className="c-home-category-label">// {category.name}</span>
-                <span className="c-home-category-arrow">›</span>
+                <div className="c-home-category-icon" aria-hidden="true">
+                  <CategoryIcon name={category.name} />
+                </div>
+
+                <div className="c-home-category-card-footer">
+                  <span className="c-home-category-label">/{category.name}</span>
+                  <span className="c-home-category-plus" aria-hidden="true">
+                    +
+                  </span>
+                </div>
               </Link>
             );
           })}

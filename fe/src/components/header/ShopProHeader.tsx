@@ -437,11 +437,17 @@ export function ShopProHeader() {
             Linh kiện PC hiệu năng cao <span>cho gaming, làm việc và sáng tạo</span>
           </p>
           <nav className="sp-topbar-nav" aria-label="Tiện ích nhanh">
-            {STORE_QUICK_LINKS.map((item) => (
-              <Link key={item.to} to={item.to} className="sp-topbar-link">
-                {item.label}
-              </Link>
-            ))}
+            {STORE_QUICK_LINKS.map((item) =>
+              item.to === "/build-pc" ? (
+                <a key={item.to} className="sp-topbar-link" href="/build-pc">
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.to} to={item.to} className="sp-topbar-link">
+                  {item.label}
+                </Link>
+              )
+            )}
           </nav>
           <div className="sp-topbar-meta">
             <Link to="/contact" className="sp-topbar-meta-link">

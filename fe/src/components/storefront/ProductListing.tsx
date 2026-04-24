@@ -64,7 +64,7 @@ function ListingProductCard({
       <Link to={href} className="c-home-product-media" style={{ display: "block" }} onClick={handleProductNav}>
         {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
         {!out && percent ? <span className="c-home-promo-badge">-{percent}%</span> : null}
-        {product.clearance ? <span className="c-home-clearance-badge">Hàng thanh lý</span> : null}
+        {product.clearance ? <span className="c-home-clearance-badge">Hàng cũ</span> : null}
         <img src={imageOf(product, fallbackImg)} alt={product.name} />
       </Link>
 
@@ -76,7 +76,7 @@ function ListingProductCard({
         </h3>
         <p>
           {(product.brandName ? `${product.brandName} • ` : "") + (product.categoryName ?? "Chưa phân loại")}
-          {product.clearance ? " • Hàng thanh lý" : ""}
+          {product.clearance ? " • Hàng cũ" : ""}
         </p>
 
         {salePrice ? (
@@ -231,7 +231,7 @@ export function ProductListing(props: ProductListingProps) {
               className={!query.clearanceOnly ? "chip" : "chip active"}
               onClick={() => updateQuery({ clearanceOnly: !query.clearanceOnly, page: 0 })}
             >
-              Hàng thanh lý
+              Hàng cũ
             </button>
             <button
               type="button"

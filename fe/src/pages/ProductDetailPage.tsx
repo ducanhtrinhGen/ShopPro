@@ -445,8 +445,8 @@ export function ProductDetailPage() {
         <h1>{product.name}</h1>
         {product.clearance ? (
           <div className="c-product-clearance-head">
-            <span className="c-product-clearance-pill">Hàng thanh lý</span>
-            <p>Sản phẩm thuộc chương trình thanh lý với số lượng giới hạn.</p>
+            <span className="c-product-clearance-pill">Hàng cũ</span>
+            <p>Sản phẩm thuộc chương trình hàng cũ với số lượng giới hạn.</p>
           </div>
         ) : null}
         <p style={{ opacity: 0.85 }}>
@@ -811,7 +811,7 @@ export function ProductDetailPage() {
                   <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
                     {itemOut ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
                     {!itemOut && itemPercent ? <span className="c-home-promo-badge">-{itemPercent}%</span> : null}
-                    {item.clearance ? <span className="c-home-clearance-badge">Hàng thanh lý</span> : null}
+                    {item.clearance ? <span className="c-home-clearance-badge">Hàng cũ</span> : null}
                     <img src={productCardImage(item)} alt={item.name} />
                   </Link>
 

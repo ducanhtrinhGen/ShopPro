@@ -46,7 +46,7 @@ export function MobileMenu({ isOpen, onClose, groups, featured, utilityLinks }: 
 
         <nav className="sp-mobile-quick" aria-label="Liên kết nhanh">
           <Link to="/products?clearanceOnly=1" className="sp-mobile-quick-link sp-mobile-quick-link--clearance" onClick={onClose}>
-            Hàng thanh lý
+            Hàng cũ
           </Link>
           {utilityLinks.map((l) => (
             <Link key={`${l.label}-${l.to}`} to={l.to} className="sp-mobile-quick-link" onClick={onClose}>

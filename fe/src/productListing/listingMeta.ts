@@ -14,7 +14,7 @@ export function getProductListingTitle(query: ProductQuery, categories: Category
     if (brand) return `Sản phẩm của ${brand.name}`;
   }
   if (query.clearanceOnly) {
-    return "Hàng thanh lý";
+    return "Hàng cũ";
   }
   if (query.promoOnly) {
     return "Sản phẩm khuyến mãi";
@@ -37,7 +37,7 @@ export function getProductListingDescription(query: ProductQuery): string | null
     parts.push("Lọc theo thương hiệu đã chọn.");
   }
   if (query.clearanceOnly) {
-    parts.push("Đang xem hàng thanh lý, số lượng có hạn.");
+    parts.push("Đang xem hàng cũ, số lượng có hạn.");
   }
   if (!parts.length) {
     return null;

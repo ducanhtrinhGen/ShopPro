@@ -1350,7 +1350,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span>Hàng thanh lý</span>
+                <span>Hàng cũ</span>
                 <input
                   type="checkbox"
                   checked={productForm.clearance}
@@ -1601,7 +1601,7 @@ export function AdminDashboardPage() {
                         <td>
                           <strong>{product.name}</strong>
                           <p className="owner-crm-product-slug">/{product.slug}</p>
-                          {product.clearance ? <p className="owner-crm-product-slug">Hàng thanh lý</p> : null}
+                          {product.clearance ? <p className="owner-crm-product-slug">Hàng cũ</p> : null}
                         </td>
                         <td>{product.categoryName || "-"}</td>
                         <td>{product.brandName || "-"}</td>

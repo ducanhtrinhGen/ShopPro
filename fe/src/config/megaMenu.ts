@@ -82,10 +82,10 @@ export function applyCategoryHintsToMegaMenu(groups: MegaMenuGroup[], categories
 export const MEGA_MENU_FEATURED: FeaturedMenuCard = {
   kicker: "Sản phẩm giá tốt",
   badge: "HOT",
-  title: "Săn deal thanh lý",
+  title: "Săn deal hàng cũ",
   description: "Tổng hợp sản phẩm giá tốt, số lượng có hạn và được cập nhật liên tục theo từng đợt xả kho.",
   href: "/products?clearanceOnly=1",
-  ctaLabel: "Xem tất cả hàng thanh lý"
+  ctaLabel: "Xem tất cả hàng cũ"
 };
 
 export const MEGA_MENU_GROUPS: MegaMenuGroup[] = [
@@ -143,16 +143,16 @@ export const MEGA_MENU_GROUPS: MegaMenuGroup[] = [
   },
   {
     id: "clearance",
-    title: "Hàng thanh lý",
+    title: "Hàng cũ",
     titleIcon: "spark",
     items: [
-      { label: "Tất cả hàng thanh lý", href: "/products?clearanceOnly=1", badge: "HOT" },
-      { label: "Laptop thanh lý", href: "/products?clearanceOnly=1&keyword=laptop", categoryHint: "laptop" },
-      { label: "PC thanh lý", href: "/products?clearanceOnly=1&keyword=pc" },
-      { label: "Màn hình thanh lý", href: "/products?clearanceOnly=1&keyword=màn hình", categoryHint: "màn hình" },
-      { label: "Linh kiện thanh lý", href: "/products?clearanceOnly=1&keyword=linh kiện" },
-      { label: "Gear thanh lý", href: "/products?clearanceOnly=1&keyword=gaming" },
-      { label: "Apple thanh lý", href: "/products?clearanceOnly=1&keyword=apple", categoryHint: "apple" },
+      { label: "Tất cả hàng cũ", href: "/products?clearanceOnly=1", badge: "HOT" },
+      { label: "Laptop cũ", href: "/products?clearanceOnly=1&keyword=laptop", categoryHint: "laptop" },
+      { label: "PC cũ", href: "/products?clearanceOnly=1&keyword=pc" },
+      { label: "Màn hình cũ", href: "/products?clearanceOnly=1&keyword=màn hình", categoryHint: "màn hình" },
+      { label: "Linh kiện cũ", href: "/products?clearanceOnly=1&keyword=linh kiện" },
+      { label: "Gear cũ", href: "/products?clearanceOnly=1&keyword=gaming" },
+      { label: "Apple cũ", href: "/products?clearanceOnly=1&keyword=apple", categoryHint: "apple" },
       { label: "Open-box & xả kho", href: "/products?clearanceOnly=1&keyword=open box", badge: "Giá tốt" }
     ]
   },

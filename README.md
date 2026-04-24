@@ -15,7 +15,7 @@ ShopPro is a full-stack product dashboard upgraded for a Frontend Developer port
 - Backend: Spring Boot 3, Spring Security, Spring Data JPA, Thymeleaf
 - Frontend: React 18, TypeScript, React Router, Vite
 - Database:
-  - Runtime: MySQL (lab08)
+  - Runtime: MySQL
   - Test: H2 in-memory
 
 ## Project Structure

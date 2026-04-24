@@ -1,25 +1,29 @@
-import { memo } from "react";
+import type { ReactNode } from "react";
 
-type GlitchTextProps = {
-  children: string;
-  /** When false, renders plain text (used for reduced-motion / low-end). */
-  active?: boolean;
-  className?: string;
+function textFromChildren(children: ReactNode): string {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  return "";
+}
+
+export type GlitchTextProps = {
+  active: boolean;
+  children: ReactNode;
 };
 
 /**
- * Cyberpunk-style chromatic-aberration title. The effect is 100% CSS
- * (see `.hero-glitch` in tailwind.css) - we only toggle it via a class name.
+ * Chromatic glitch on the title. CSS lives in `tailwind.css` (`.hero-glitch`).
+ * When `active` is false, renders children unchanged (e.g. reduced motion).
  */
-function GlitchTextImpl({ children, active = true, className = "" }: GlitchTextProps) {
-  if (!active) {
-    return <span className={className}>{children}</span>;
+export function GlitchText({ active, children }: GlitchTextProps) {
+  const raw = textFromChildren(children);
+  if (!active || !raw) {
+    return <>{children}</>;
   }
+
   return (
-    <span className={`hero-glitch ${className}`} data-text={children} aria-label={children}>
+    <span className="hero-glitch" data-text={raw}>
       {children}
     </span>
   );
 }
-
-export const GlitchText = memo(GlitchTextImpl);

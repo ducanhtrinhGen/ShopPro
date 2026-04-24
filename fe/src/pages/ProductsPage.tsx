@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest, ApiRequestError } from "../api/client";
 import { getBrands, getCategories } from "../api/catalog";
 import { useAuth } from "../auth/AuthContext";
@@ -14,6 +14,7 @@ import type { Brand, Category, ProductPageResponse } from "../types";
 export function ProductsPage() {
   const { user } = useAuth();
   const { openLoginModal } = useLoginModal();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = useMemo(() => parseQuery(searchParams), [searchParams]);
 
@@ -32,6 +33,10 @@ export function ProductsPage() {
 
   const updateQuery = useCallback(
     (patch: Partial<ProductQuery>) => {
+      if ("keyword" in patch && !String(patch.keyword ?? "").trim()) {
+        setKeywordInput("");
+      }
+
       const next: ProductQuery = {
         ...query,
         ...patch
@@ -50,6 +55,19 @@ export function ProductsPage() {
     },
     [query, searchParams, setSearchParams]
   );
+
+  /** Tránh URL dạng `keyword=Mainboard` + cùng danh mục Mainboard (0 kết quả). */
+  useEffect(() => {
+    if (!categories.length || !query.categoryId || !query.keyword.trim()) {
+      return;
+    }
+    const cat = categories.find((c) => String(c.id) === query.categoryId);
+    if (!cat) return;
+    if (cat.name.trim().toLowerCase() !== query.keyword.trim().toLowerCase()) {
+      return;
+    }
+    updateQuery({ keyword: "", page: 0 });
+  }, [categories, query.categoryId, query.keyword, updateQuery]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -187,6 +205,21 @@ export function ProductsPage() {
     }));
   };
 
+  /** Strip keyword from PLP URL before opening PDP so "tìm theo tên" không còn khi quay lại danh sách. */
+  const openProductDetail = useCallback(
+    (slug: string) => {
+      const trimmed = slug.trim();
+      if (!trimmed) return;
+      setKeywordInput("");
+      const cleared: ProductQuery = { ...query, keyword: "", page: 0 };
+      setSearchParams(toSearchParams(cleared), { replace: true });
+      queueMicrotask(() => {
+        navigate(`/products/${encodeURIComponent(trimmed)}`);
+      });
+    },
+    [navigate, query, setSearchParams]
+  );
+
   return (
     <div className="panel plp-root">
       <nav className="plp-breadcrumb" aria-label="Breadcrumb">
@@ -223,6 +256,7 @@ export function ProductsPage() {
         keywordInput={keywordInput}
         onKeywordInput={setKeywordInput}
         updateQuery={updateQuery}
+        onOpenProductDetail={openProductDetail}
         categories={categories}
         brands={brands}
         topCategories={topCategories}

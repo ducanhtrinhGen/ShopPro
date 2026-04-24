@@ -367,9 +367,14 @@ export function ShopProHeader() {
   }, []);
 
   useEffect(() => {
+    const onProductDetail = /^\/products\/[^/]+$/.test(location.pathname);
+    if (onProductDetail) {
+      setSearchKeyword("");
+      return;
+    }
     const params = new URLSearchParams(location.search);
     setSearchKeyword(params.get("keyword") ?? "");
-  }, [location.search]);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");

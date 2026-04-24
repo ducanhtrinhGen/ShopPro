@@ -5,31 +5,15 @@ import { useLazyVideo } from "../../hooks/useLazyVideo";
 import { useIsLowEndDevice } from "../../hooks/useIsLowEndDevice";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion";
 
-/* -------------------------------------------------------------------------- *
- *  Corsair-style fixed video hero                                            *
- *                                                                            *
- *  One looping background video, pinned over a full viewport, with a         *
- *  centered editorial content block. This replaces the old multi-scene      *
- *  scroll-driven hero with the simpler "one image, always playing" vibe     *
- *  from corsair.com / razer.com / nzxt.com.                                  *
- * -------------------------------------------------------------------------- */
-
 type HeroProps = {
-  /** Main title (big, bold). Defaults to a VN-gaming line. */
   title?: string;
-  /** Short kicker above the title. */
   eyebrow?: string;
-  /** Supporting sentence below the title. */
   subtitle?: string;
-  /** CTA label + href. */
   ctaLabel?: string;
   ctaHref?: string;
-  /** Video sources. Keep MP4 under ~8 MB, WebM optional. */
   videoMp4?: string;
   videoWebm?: string;
-  /** Poster image — also used as the low-end / reduced-motion fallback. */
   poster?: string;
-  /** Render glitch effect on the title (disabled for reduced-motion). */
   glitch?: boolean;
 };
 
@@ -46,10 +30,6 @@ const DEFAULTS = {
     "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1920&q=80",
   glitch: true
 } as const;
-
-/* -------------------------------------------------------------------------- */
-/*  CTA button (hover shimmer + arrow shift)                                  */
-/* -------------------------------------------------------------------------- */
 
 function HeroCTA({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -82,10 +62,6 @@ function HeroCTA({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Main Hero                                                                 */
-/* -------------------------------------------------------------------------- */
-
 export function Hero(props: HeroProps = {}) {
   const {
     title = DEFAULTS.title,
@@ -106,8 +82,6 @@ export function Hero(props: HeroProps = {}) {
   const lowEnd = useIsLowEndDevice();
   const staticMode = reducedMotion || lowEnd;
 
-  // Subtle scroll-driven parallax: the video slowly scales and drifts while
-  // content fades as the user leaves the hero behind.
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"]
@@ -118,15 +92,8 @@ export function Hero(props: HeroProps = {}) {
   const contentOpacity = useTransform(scrollYProgress, [0, 0.75, 1], [1, 1, 0]);
   const videoDim = useTransform(scrollYProgress, [0, 1], [1, 0.55]);
 
-  // Lazy mount the <source> elements once the hero is near the viewport.
-  // It's above the fold so in practice this fires almost immediately, but
-  // keeping the guard means SSR / pre-rendered markup doesn't fetch video
-  // bytes until hydration has happened.
   const { ref: lazyRef, shouldLoad } = useLazyVideo<HTMLDivElement>("50% 0px");
 
-  // Some browsers suspend autoplay when the tab backgrounds; kick playback
-  // when visibility returns. Ignore rejections (autoplay can be blocked when
-  // the video isn't muted, but we always mute below).
   useEffect(() => {
     if (staticMode) return;
     const video = videoRef.current;
@@ -148,7 +115,6 @@ export function Hero(props: HeroProps = {}) {
       className="relative isolate h-[100svh] min-h-[620px] w-full overflow-hidden bg-abyss text-white"
       aria-label="Hero"
     >
-      {/* ---------- Background media ---------- */}
       <motion.div
         ref={lazyRef}
         className="absolute inset-0"
@@ -165,12 +131,7 @@ export function Hero(props: HeroProps = {}) {
         aria-hidden="true"
       >
         {staticMode ? (
-          <img
-            src={poster}
-            alt=""
-            className="h-full w-full object-cover"
-            decoding="async"
-          />
+          <img src={poster} alt="" className="h-full w-full object-cover" decoding="async" />
         ) : (
           <video
             ref={videoRef}
@@ -190,10 +151,8 @@ export function Hero(props: HeroProps = {}) {
         )}
       </motion.div>
 
-      {/* ---------- Cinematic overlay (readable text regardless of video) ---------- */}
       <div className="hero-overlay pointer-events-none absolute inset-0" aria-hidden="true" />
 
-      {/* ---------- Foreground content ---------- */}
       <motion.div
         className="relative z-10 flex h-full items-center justify-center px-6 text-center"
         style={staticMode ? undefined : { y: contentY, opacity: contentOpacity, willChange: "transform, opacity" }}
@@ -236,7 +195,6 @@ export function Hero(props: HeroProps = {}) {
         </div>
       </motion.div>
 
-      {/* ---------- Scroll indicator ---------- */}
       {!staticMode ? (
         <motion.div
           className="pointer-events-none absolute bottom-8 left-1/2 z-20 -translate-x-1/2 text-white/70"
@@ -248,8 +206,8 @@ export function Hero(props: HeroProps = {}) {
           <div className="flex flex-col items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.4em]">
             <span>Scroll</span>
             <motion.span
-              className="block h-8 w-px bg-white/60"
-              animate={{ scaleY: [0.3, 1, 0.3], originY: 0 }}
+              className="block h-8 w-px origin-top bg-white/60"
+              animate={{ scaleY: [0.3, 1, 0.3] }}
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
             />
           </div>

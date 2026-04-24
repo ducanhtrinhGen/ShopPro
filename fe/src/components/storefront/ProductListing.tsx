@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import type { Brand, Category, Product, ProductPageResponse } from "../../types";
 import { buildPlpCategoryHref, parseSort, type ProductQuery } from "../../productListing/productQuery";
@@ -16,6 +17,8 @@ export type ProductListingProps = {
   keywordInput: string;
   onKeywordInput: (value: string) => void;
   updateQuery: (patch: Partial<ProductQuery>) => void;
+  /** When set, opening a product clears `keyword` from the PLP URL before navigating (see ProductsPage). */
+  onOpenProductDetail?: (slug: string) => void;
   categories: Category[];
   brands: Brand[];
   topCategories: TopCategory[];
@@ -34,12 +37,14 @@ function ListingProductCard({
   product,
   quantity,
   onQuantityChange,
-  onAddToCart
+  onAddToCart,
+  onOpenProductDetail
 }: {
   product: Product;
   quantity: number;
   onQuantityChange: (productId: number, value: number) => void;
   onAddToCart: (productId: number) => void;
+  onOpenProductDetail?: (slug: string) => void;
 }) {
   const percent = promoPercent(product);
   const salePrice = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : null;
@@ -47,10 +52,16 @@ function ListingProductCard({
   const href = product.slug ? `/products/${product.slug}` : "/products";
   const fallbackImg = productCardFallbackImages[product.id % productCardFallbackImages.length];
 
+  const handleProductNav = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!product.slug || !onOpenProductDetail) return;
+    event.preventDefault();
+    onOpenProductDetail(product.slug);
+  };
+
   // Do not use `js-reveal` on PLP: global CSS keeps opacity:0 until `.is-visible`, and only HomePage runs that observer.
   return (
     <article className="c-home-product-card plp-product-card">
-      <Link to={href} className="c-home-product-media" style={{ display: "block" }}>
+      <Link to={href} className="c-home-product-media" style={{ display: "block" }} onClick={handleProductNav}>
         {out ? <span className="c-home-promo-badge">HẾT HÀNG</span> : null}
         {!out && percent ? <span className="c-home-promo-badge">-{percent}%</span> : null}
         {product.clearance ? <span className="c-home-clearance-badge">Hàng thanh lý</span> : null}
@@ -59,7 +70,9 @@ function ListingProductCard({
 
       <div className="c-home-product-meta">
         <h3>
-          <Link to={href}>{product.name}</Link>
+          <Link to={href} onClick={handleProductNav}>
+            {product.name}
+          </Link>
         </h3>
         <p>
           {(product.brandName ? `${product.brandName} • ` : "") + (product.categoryName ?? "Chưa phân loại")}
@@ -130,6 +143,7 @@ export function ProductListing(props: ProductListingProps) {
     keywordInput,
     onKeywordInput,
     updateQuery,
+    onOpenProductDetail,
     categories,
     brands,
     topCategories,
@@ -155,7 +169,17 @@ export function ProductListing(props: ProductListingProps) {
             aria-label="Tìm theo tên sản phẩm"
           />
 
-          <select value={query.categoryId} onChange={(event) => updateQuery({ categoryId: event.target.value, page: 0 })}>
+          <select
+            value={query.categoryId}
+            onChange={(event) => {
+              const id = event.target.value;
+              updateQuery({
+                categoryId: id,
+                page: 0,
+                ...(id ? { keyword: "" } : {})
+              });
+            }}
+          >
             <option value="">Tất cả danh mục</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -251,7 +275,14 @@ export function ProductListing(props: ProductListingProps) {
                 key={category.id}
                 type="button"
                 className={query.categoryId === String(category.id) ? "chip active" : "chip"}
-                onClick={() => updateQuery({ categoryId: category.id > 0 ? String(category.id) : "", page: 0 })}
+                onClick={() => {
+                  const id = category.id > 0 ? String(category.id) : "";
+                  updateQuery({
+                    categoryId: id,
+                    page: 0,
+                    ...(id ? { keyword: "" } : {})
+                  });
+                }}
               >
                 {category.name}
               </button>
@@ -277,6 +308,7 @@ export function ProductListing(props: ProductListingProps) {
                   quantity={quantityByProduct[product.id] ?? 1}
                   onQuantityChange={onQuantityChange}
                   onAddToCart={onAddToCart}
+                  onOpenProductDetail={onOpenProductDetail}
                 />
               ))}
             </div>

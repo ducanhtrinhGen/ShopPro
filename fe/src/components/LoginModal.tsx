@@ -1,5 +1,6 @@
 import { type FormEvent, type MouseEvent, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { GoogleGIcon } from "./GoogleGIcon";
 import { ApiRequestError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { startGoogleAuth } from "../auth/googleAuth";
@@ -110,20 +111,18 @@ export function LoginModal() {
         <div className="login-modal-form" style={{ paddingBottom: 0 }}>
           <button
             type="button"
-            className="login-modal-google"
+            className="login-modal-google login-modal-google--social"
             onClick={() => startGoogleAuth()}
             disabled={isSubmitting}
           >
-            <span className="login-modal-google-mark" aria-hidden="true">
-              G
-            </span>
-            Tiếp tục với Google
+            <GoogleGIcon className="login-modal-google-glogo" />
+            <span>Google</span>
           </button>
-          <p className="login-modal-google-hint">Đăng nhập nhanh bằng email Google của bạn.</p>
+          <p className="login-modal-google-hint"></p>
         </div>
 
         <div className="login-modal-divider" aria-hidden="true">
-          <span>hoặc nhập tài khoản ShopPro</span>
+          <span>hoặc</span>
         </div>
 
         <form className="login-modal-form" onSubmit={(event) => void handleSubmit(event)} autoComplete="off">

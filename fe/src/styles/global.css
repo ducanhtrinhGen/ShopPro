@@ -4502,6 +4502,8 @@ a.account-sidebar-link-external:hover {
   flex-direction: column;
   justify-content: flex-end;
   transition: transform 0.2s ease, border-color 0.2s ease;
+  background-size: cover;
+  background-position: center;
 }
 
 .c-home-category-card:hover {
@@ -7175,6 +7177,32 @@ a.account-sidebar-link-external:hover {
   color: #18202c;
   font-size: 0.92rem;
   font-weight: 800;
+}
+
+/* Compact “Sign in with Google” pill (login + register modals). */
+.login-modal-google--social {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0.42rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.login-modal-google--social:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.login-modal-google-glogo {
+  flex-shrink: 0;
+  display: block;
 }
 
 .login-modal-google-hint {
